@@ -1,13 +1,30 @@
 #!/bin/bash
 
+##----------------------------------------------------------------------------##
 # Author: Thomas Hackl, thomas.hackl@uni-wuerzburg.de
+
 # Last Modified: Thomas Hackl, 15.06.2013
-# Version 0.10
 
+# Version 0.11
+
+
+##----------------------------------------------------------------------------##
+## CHANGELOG
+
+## 0.11
+# CHUNK_STEP: experimental
+# LC_ALL instead of LC_NUMERIC
+
+## 0.10
+# initial script
+
+
+##----------------------------------------------------------------------------##
 ## TODO
-## CHUNK_STEP, e.g. 1~2 for only odds
-## split prefix multiple files
+# autocompute chunk number
+# remove chunk-ratio - chunk step can do similar - revert to integer arithmetic
 
+##----------------------------------------------------------------------------##
 # Variable defaults
 DEBUG=1;
 CHUNK_NUM=100;
@@ -201,11 +218,11 @@ for FILE in $@; do
 
         # auto compute chunk size
 	if [ $CHUNK_SIZE_BRUTTO -eq 0 ]; then
-		CHUNK_SIZE_BRUTTO=$(LC_NUMERIC="en_US.UTF-8" printf "%.0f" `bc <<< "scale=3; $FILE_SIZE/$CHUNK_NUM"` );
-		CHUNK_SIZE_NETTO=$(LC_NUMERIC="en_US.UTF-8" printf "%.0f" `bc<<< "scale=3; ($FILE_SIZE/$CHUNK_NUM)*$CHUNK_RATIO"` );
-		CHUNK_SIZE_DELTA=$(LC_NUMERIC="en_US.UTF-8" printf "%.0f" `bc<<< "scale=3; $CHUNK_SIZE_BRUTTO-$CHUNK_SIZE_NETTO"` );
+		CHUNK_SIZE_BRUTTO=$(LC_ALL="en_US.UTF-8" printf "%.0f" `bc <<< "scale=3; $FILE_SIZE/$CHUNK_NUM"` );
+		CHUNK_SIZE_NETTO=$(LC_ALL="en_US.UTF-8" printf "%.0f" `bc<<< "scale=3; ($FILE_SIZE/$CHUNK_NUM)*$CHUNK_RATIO"` );
+		CHUNK_SIZE_DELTA=$(LC_ALL="en_US.UTF-8" printf "%.0f" `bc<<< "scale=3; $CHUNK_SIZE_BRUTTO-$CHUNK_SIZE_NETTO"` );
 	else
-	    CHUNK_SIZE_NETTO=$(LC_NUMERIC="en_US.UTF-8" printf "%.0f" `bc <<< "scale=3; $CHUNK_SIZE_BRUTTO*$CHUNK_RATIO"` )
+	    CHUNK_SIZE_NETTO=$(LC_ALL="en_US.UTF-8" printf "%.0f" `bc <<< "scale=3; $CHUNK_SIZE_BRUTTO*$CHUNK_RATIO"` )
 	fi;
     
 	[ $DEBUG -gt 1 ] && (
