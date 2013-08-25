@@ -193,7 +193,11 @@ done
 [ $DEBUG -gt 1 ] && echo "ARGS=$ARGS" 1>&2;
 
 # process some args and opts
-[ $# -eq 0 ] && (echo "FILE required" 1>&2 && show_usage && exit 1)
+if [ $# -eq 0 ]; then
+    echo "FILE required" 1>&2 
+    show_usage
+    exit 1
+fi;
 
 if [ $CHUNK_SIZE -gt 0 ] && [ $CHUNK_NUM -gt 0 ]; then
     echo "Either --chunk-size or --chunk-number required, not both" 1>&2
