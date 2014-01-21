@@ -152,13 +152,25 @@ if [ $# -eq 0 ]; then
     exit 1
 fi;
 
-if [ ! $CHUNK_RATIO == 1 ]; then
-    SED='1~8{N;N;N;p}'
-	for FILE in $@; do
-	    sed -ne "$SED" < "$FILE"
-	done;
+
+if [ $CHUNK_RATIO == 0.2 ]; then
+    SED='1~20{N;N;N;p}' # 4/20 == 0.2
+    for FILE in $@; do
+        sed -ne "$SED" < "$FILE"
+    done;
+elif [ $CHUNK_RATIO == 0.3 ]; then
+    SED='1~40{N;N;N;N;N;N;N;N;N;N;N;p}' # 12/40 == 0.3
+    for FILE in $@; do
+        sed -ne "$SED" < "$FILE"
+    done;
+elif [ $CHUNK_RATIO == 0.5 ]; then
+    SED='1~8{N;N;N;p}' # 4/8 == 0.5
+    for FILE in $@; do
+        sed -ne "$SED" < "$FILE"
+    done;
 else
     cat $@
 fi;
+   
 
     
