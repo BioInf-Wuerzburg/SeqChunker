@@ -197,8 +197,6 @@ sub test_guess_file_format
     }
 }
 
-test_guess_file_format();
-
 __END__
 
 
