@@ -342,6 +342,8 @@ if ($help)
     exit;
 }
 
+$CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
+
 main_loop(@ARGV);
 
 sub test_expand_byte_suffix
