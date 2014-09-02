@@ -118,19 +118,20 @@ sub expand_byte_suffix
     if ($value =~ /^\d+$/)
     {
 	return $value+0;
-    } elsif  ($value =~ /^(\d+)\s*([kMG])$/)
+    } elsif  ($value =~ /^(\d+)\s*([kmg])$/i)
     {
 	my ($base, $suffix) = ($1, $2);
-	return $base*1024**(index("kMG", $suffix)+1);
+	return $base*1024**(index("kmg", lc($suffix))+1);
     } else {
 	die "The value '$value' does not represent a number or a suffixed number!\n";
     }
 }
 
+test_expand_byte_suffix();
 
 sub test_expand_byte_suffix
 {
-    foreach (qw(100 0001 15 10k 10M 10G 5 9L4))
+    foreach (qw(100 0001 15 10k 10K 10m 10M 10g 10G 5 9L4))
     { 
 	print expand_byte_suffix($_), "\n"; 
     }
