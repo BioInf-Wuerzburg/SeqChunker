@@ -219,9 +219,37 @@ sub get_chunk
 	}
 
 	# check if buffer contains a new block
-	if (($fileformat eq "fasta" && $buffer =~ /^>/) || ($fileformat eq "fastq" && $buffer =~ /^@/))
+	if ($fileformat eq "fasta" && $buffer =~ /^>/)
 	{
 	    # store the new block inside the cache variable
+	    $cache = $buffer;
+	    # and leave the loop
+	    last;
+	} elsif  ($fileformat eq "fastq" && $buffer =~ /^@/)
+	{
+	    # for fastq the next line have to be the sequence and the next line have to start with a plus
+	    my $seq = <$fh>;
+	    my $header2 = <$fh>;
+
+	    if ($header2 =~ /^+/)
+	    {
+		# okay... we reached a new block
+		$buffer .= $seq.$header2;
+	    } elsif ($seq =~ /^@/)
+	    {
+		# the block border was wrong and the start of a
+		# quality line, therefore, the next line should be the
+		# start of a new block write the buffer to the output
+		# if required and fill the buffer with the right
+		# content
+		if ($skip == 0 && $buffer)
+		{
+		    print $output_fh $buffer;
+		}
+		$buffer = $seq.$header2;
+	    } else {
+		die "Unable to find a new block in a fastq file\n";
+	    }
 	    $cache = $buffer;
 	    # and leave the loop
 	    last;
