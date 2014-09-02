@@ -165,6 +165,12 @@ sub main_loop
 	    $CHUNK_NUM=int($filesize/$CHUNK_SIZE)+1;
 	}
 
+	# set chunk last if not set
+	if ($CHUNK_LAST == 0)
+	{
+	    $CHUNK_LAST=$CHUNK_NUM;
+	}
+
 	# print debug information
 	if ($_debug)
 	{
