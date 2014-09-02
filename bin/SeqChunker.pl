@@ -278,7 +278,7 @@ sub main_loop
 	my $skip = 1;
 
 	# process all chunks until LAST_CHUNK is reached
-	while ($current_chunk<$CHUNK_LAST)
+	while ($current_chunk<=$CHUNK_LAST)
 	{
 	    # skipped should be true, if the number of the current_chunk < $CHUNK_FIRST
 	    if ($current_chunk < $CHUNK_FIRST)
