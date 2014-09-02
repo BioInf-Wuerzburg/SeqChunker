@@ -153,7 +153,7 @@ sub get_chunk
 
     if ($_debug)
     {
-	printf "Starting file position: current %d, but should be %d\n", $starting_pos, $starting_pos-length($cache);
+	printf STDERR "Starting file position: current %d, but should be %d\n", $starting_pos, $starting_pos-length($cache);
     }
 
     # we reduce the chunk size by 10 to find the right new block
