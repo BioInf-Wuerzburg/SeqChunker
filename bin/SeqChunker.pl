@@ -174,6 +174,14 @@ sub main_loop
 
 	my $fileformat=guess_file_format($fh) || die "The file '$act_file' seems to be neigher a FASTQ nor a FASTA file\n";
 
+	# calculate the chunk size and the number of chunks expected
+	if ($CHUNK_SIZE == 0)
+	{
+	    $CHUNK_SIZE=int($filesize/$CHUNK_NUM)+1;
+	} else {
+	    $CHUNK_NUM=int($filesize/$CHUNK_SIZE)+1;
+	}
+
 	close($fh) || die "Unable to close file '$act_file' after reading\n";
     }
 }
