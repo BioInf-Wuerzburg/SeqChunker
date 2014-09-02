@@ -127,6 +127,32 @@ sub expand_byte_suffix
     }
 }
 
+sub guess_file_format
+{
+    my ($fh) = @_;
+
+    # read the first byte of the file
+    my $first_byte = "";
+    my $bytes_received=read $fh, $first_byte, 1;
+    if ($bytes_received != 1)
+    {
+	die "Error on retriving first byte from file: $!\n";
+    }
+
+    # check the first byte for indicating a fasta (>), fastq (@) or other file ([^>@])
+
+    if ($first_byte eq "@")
+    {
+	return "fastq";
+    } elsif ($first_byte eq ">")
+    {
+	return "fasta";
+    } else {
+	return undef;
+    }
+
+}
+
 sub main_loop
 {
     my @files = @_;
@@ -159,6 +185,19 @@ sub test_expand_byte_suffix
 	print expand_byte_suffix($_), "\n"; 
     }
 }
+
+sub test_guess_file_format
+{
+    foreach (qw(test.fasta test.fastq test.other))
+    { 
+	open(my $fh, "<", $_) || die;
+	my $fileformat=guess_file_format($fh) || die "The file seems to be neigher a FASTQ nor a FASTA file\n";
+	print "$_ was detected as $fileformat\n";
+	close($fh) || die;
+    }
+}
+
+test_guess_file_format();
 
 __END__
 
