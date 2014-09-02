@@ -127,6 +127,31 @@ sub expand_byte_suffix
     }
 }
 
+sub main_loop
+{
+    my @files = @_;
+
+    foreach my $act_file (@files)
+    {
+	# check if the file exists
+	unless (-e $act_file)
+	{
+	    die "The file '$act_file' does not exist!\n";
+	}
+
+	# get the filesize and open the file
+	my $filesize = (stat($act_file))[7];
+
+	if ($_debug) { printf "Filesize for file '%s' is %d bytes!\n", $act_file, $filesize; }
+
+	open(my $fh, "<", $act_file) || die "Unable to open file '$act_file' for reading\n";
+
+	my $fileformat=guess_file_format($fh) || die "The file '$act_file' seems to be neigher a FASTQ nor a FASTA file\n";
+
+	close($fh) || die "Unable to close file '$act_file' after reading\n";
+    }
+}
+
 sub test_expand_byte_suffix
 {
     foreach (qw(100 0001 15 10k 10K 10m 10M 10g 10G 5 9L4))
