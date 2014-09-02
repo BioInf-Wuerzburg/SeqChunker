@@ -111,6 +111,21 @@ NOTE: Chunk related computations are run each input file individually.
 EOF
 }
 
+sub expand_byte_suffix
+{
+    my ($value) = @_;
+
+    if ($value =~ /^\d+$/)
+    {
+	return $value+0;
+    } elsif  ($value =~ /^(\d+)\s*([kMG])$/)
+    {
+	my ($base, $suffix) = ($1, $2);
+	return $base*1024**(index("kMG", $suffix)+1);
+    } else {
+	die "The value '$value' does not represent a number or a suffixed number!\n";
+    }
+}
 __END__
 
 
