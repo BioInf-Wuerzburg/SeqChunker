@@ -41,23 +41,6 @@ my $OUT="";
 my $OUT_SPLIT=0;
 my $MAX_BLOCK_SIZE=1000000;
 
-my $SED_FASTA='/^>/{p;Q}'; # with -n, prints only matching line with,
-                       #  else prints all previous lines + matching line
-
-my $SED_FIRST_FASTQ='/^@/ { # if ^@
-                N # read a second line
-                /\n@/ { s/^@.*\n// ; N} # remove first line and read another
-                N;N;p;q; # read two more lines, print and quit
-        }';
-
-my $SED_LAST_FASTQ='/^@/ { # if ^@
-                N # read a second line
-                /\n@/ { N } # read additonal line if second is head
-                N;N;q; # read two more lines, print and quit
-        }';
-
-my $PRINTF_DEBUG="  %-10s %10s : '%s'\n";
-
 
 sub show_usage
 {
