@@ -126,6 +126,16 @@ sub expand_byte_suffix
 	die "The value '$value' does not represent a number or a suffixed number!\n";
     }
 }
+
+
+sub test_expand_byte_suffix
+{
+    foreach (qw(100 0001 15 10k 10M 10G 5 9L4))
+    { 
+	print expand_byte_suffix($_), "\n"; 
+    }
+}
+
 __END__
 
 
