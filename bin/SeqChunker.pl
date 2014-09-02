@@ -28,6 +28,7 @@ use Getopt::Long;
 
 # Variable defaults
 my $_debug=1;
+my $help=0;
 
 my $CHUNK_NUM=0;
 
@@ -228,6 +229,21 @@ sub main_loop
 
 	close($fh) || die "Unable to close file '$act_file' after reading\n";
     }
+}
+
+GetOptions(
+    'chunk-number|n=i' => \$CHUNK_NUM,
+    'chunk-size|s=s' => \$CHUNK_SIZE,
+    'first-chunk|f=i' => \$CHUNK_FIRST,
+    'chunk-step|x=i' => \$CHUNK_STEP,
+    'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
+    'debug|d' => \$_debug,
+    'help|?|h' => \$help);
+
+if ($help)
+{
+    show_help();
+    exit;
 }
 
 sub test_expand_byte_suffix
