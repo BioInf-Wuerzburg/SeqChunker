@@ -17,7 +17,7 @@ Bin="$(cd -- "$(dirname "$0")" && pwd)"
 if [ "$VER" -ge 4 ]; then
 
     bash "$Bin/SeqChunker-dd" $@
-  
+    
 else
 
     bash "$Bin/SeqChunker-sed" $@
