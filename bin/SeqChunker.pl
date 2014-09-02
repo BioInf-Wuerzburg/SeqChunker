@@ -182,6 +182,58 @@ sub main_loop
 	    $CHUNK_NUM=int($filesize/$CHUNK_SIZE)+1;
 	}
 
+	# print debug information
+	if ($_debug)
+	{
+	    printf "CHUNK_SIZE=%d\nCHUNK_NUM=%d\nCHUNK_FIRST=%d\nCHUNK_LAST=%d\nCHUNK_STEP=%d\nCHUNK_STEP_NUM=%d\n", $CHUNK_SIZE, $CHUNK_NUM, $CHUNK_FIRST, $CHUNK_LAST, $CHUNK_STEP, $CHUNK_STEP_NUM;
+	}
+
+	# counter for the current chunk
+	my $current_chunk=1;
+
+	# this variable determines if a block should be skipped (=1) or kept (=0)
+	my $skip = 1;
+
+	# process all chunks until LAST_CHUNK is reached
+	while ($current_chunk<$CHUNK_LAST)
+	{
+	    # skipped should be true, if the number of the current_chunk < $CHUNK_FIRST
+	    if ($current_chunk < $CHUNK_FIRST)
+	    {
+		$skip = 1;
+	    }
+
+	    # moreover if not every chunk should be returned, we have to determine if this chunk should be returned or not
+	    if ((($current_chunk-$CHUNK_FIRST)%$CHUNK_STEP) < $CHUNK_STEP_NUM)
+	    {
+		$skip = 0;
+	    } else {
+		$skip = 1;
+	    }
+
+	    # generate the filehandle for the output
+	    my $output_fh = undef;
+	    my $output_filename = undef;
+
+	    if ($OUT_SPLIT && $skip == 0)
+	    {
+		$output_filename = printf($OUT, $current_chunk);
+		open($output_fh, ">", $output_filename) || die "Unable to open file '$output_filename' for writing! $!\n";
+	    } else {
+		$output_fh = *STDOUT;
+	    }
+
+	    get_chunk($fh, $output_fh, $fileformat, $skip);
+
+	    # close the file if a new one was created
+	    if ($OUT_SPLIT && $skip == 0)
+	    {
+		close($output_fh) || die "Unable to open file '$output_filename' after writing! $!\n";
+	    }
+
+	    $current_chunk++;
+	}
+
 	close($fh) || die "Unable to close file '$act_file' after reading\n";
     }
 }
