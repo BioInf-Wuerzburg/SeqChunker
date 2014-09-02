@@ -300,7 +300,11 @@ sub main_loop
 
 	    if ($OUT_SPLIT && $skip == 0)
 	    {
-		$output_filename = printf($OUT, $current_chunk);
+		$output_filename = sprintf($OUT, $current_chunk);
+		if ($_debug)
+		{
+		    printf STDERR "The next filename for output is '%s'\n", $output_filename;
+		}
 		open($output_fh, ">", $output_filename) || die "Unable to open file '$output_filename' for writing! $!\n";
 	    } else {
 		$output_fh = *STDOUT;
@@ -334,7 +338,9 @@ GetOptions(
     'chunk-step|x=i' => \$CHUNK_STEP,
     'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
     'debug|d' => \$_debug,
-    'help|?|h' => \$help);
+    'help|?|h' => \$help,
+    'out|o=s' => \$OUT,
+    );
 
 if ($help)
 {
@@ -343,6 +349,11 @@ if ($help)
 }
 
 $CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
+
+if ($OUT)
+{
+    $OUT_SPLIT=1;
+}
 
 main_loop(@ARGV);
 
