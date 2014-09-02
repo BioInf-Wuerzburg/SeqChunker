@@ -140,6 +140,96 @@ sub guess_file_format
 
 }
 
+sub get_chunk
+{
+    my (
+	$fh,
+	$output_fh,
+	$fileformat,
+	$skip
+	) = @_;
+
+    my $starting_pos = tell($fh);
+
+    if ($_debug)
+    {
+	printf "Starting file position: current %d, but should be %d\n", $starting_pos, $starting_pos-length($cache);
+    }
+
+    # we reduce the chunk size by 10 to find the right new block
+    my $security_margin = 10;
+
+    my $chunksize2get = $CHUNK_SIZE - $security_margin - length($cache);
+
+    my $buffer = $cache;
+    # empty cache
+    $cache = "";
+
+    # print the buffer to output_fh if skip is not set
+    if ($skip == 0 && $buffer)
+    {
+	print $output_fh $buffer;
+    }
+
+    # read the number of chunksize2get bytes
+    my $bytesread = read($fh, $buffer, $chunksize2get);
+
+    # print the buffer to output_fh if skip is not set
+    if ($skip == 0 && $buffer)
+    {
+	print $output_fh $buffer;
+    }
+
+    # find the next block
+    # read until the next line break
+    $buffer = <$fh>;
+
+    # minimum length of buffer have to be 10
+    if ($buffer && length($buffer) <= $security_margin)
+    {
+	# print the buffer to output_fh if skip is not set
+	if ($skip == 0  && $buffer)
+	{
+	    print $output_fh $buffer;
+	}
+	# and get the next line
+	$buffer = <$fh>;
+    }
+
+    # print the buffer to output_fh if skip is not set
+    if ($skip == 0 && $buffer)
+    {
+	print $output_fh $buffer;
+    }
+
+    # find next block
+    while (1)
+    {
+	$buffer = <$fh>;
+
+	# check if we reached the eof and leave the loop in this case
+	if (eof($fh))
+	{
+	    last;
+	}
+
+	# check if buffer contains a new block
+	if (($fileformat eq "fasta" && $buffer =~ /^>/) || ($fileformat eq "fastq" && $buffer =~ /^@/))
+	{
+	    # store the new block inside the cache variable
+	    $cache = $buffer;
+	    # and leave the loop
+	    last;
+	} else {
+	    # not a new block so print the buffer to output_fh if skip is not set
+	    if ($skip == 0  && $buffer)
+	    {
+		print $output_fh $buffer;
+	    }
+	}
+    }
+}
+
 sub main_loop
 {
     my @files = @_;
