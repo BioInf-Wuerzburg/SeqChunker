@@ -225,6 +225,12 @@ sub main_loop
 	    }
 
 	    $current_chunk++;
+
+	    # check if the whole file was read
+	    if (eof($fh))
+	    {
+		last;
+	    }
 	}
 
 	close($fh) || die "Unable to close file '$act_file' after reading\n";
