@@ -241,15 +241,15 @@ sub main_loop
 sub test_expand_byte_suffix
 {
     foreach (qw(100 0001 15 10k 10K 10m 10M 10g 10G 5 9L4))
-    { 
-	print expand_byte_suffix($_), "\n"; 
+    {
+	print expand_byte_suffix($_), "\n";
     }
 }
 
 sub test_guess_file_format
 {
     foreach (qw(test.fasta test.fastq test.other))
-    { 
+    {
 	open(my $fh, "<", $_) || die;
 	my $fileformat=guess_file_format($fh) || die "The file seems to be neigher a FASTQ nor a FASTA file\n";
 	print "$_ was detected as $fileformat\n";
