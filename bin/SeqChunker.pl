@@ -171,8 +171,13 @@ sub get_chunk
 	print $output_fh $buffer;
     }
 
-    # read the number of chunksize2get bytes
-    my $bytesread = read($fh, $buffer, $chunksize2get);
+    # read the number of chunksize2get bytes if skip is not set
+    if ($skip == 0)
+    {
+	my $bytesread = read($fh, $buffer, $chunksize2get);
+    } else {
+	seek($fh, $chunksize2get, 1);
+    }
 
     # print the buffer to output_fh if skip is not set
     if ($skip == 0 && $buffer)
