@@ -41,6 +41,7 @@ my $OUT="";
 my $OUT_SPLIT=0;
 my $MAX_BLOCK_SIZE=1000000;
 
+my $cache = "";
 
 sub show_usage
 {
@@ -126,9 +127,11 @@ sub guess_file_format
 
     if ($first_byte eq "@")
     {
+	$cache = $first_byte;
 	return "fastq";
     } elsif ($first_byte eq ">")
     {
+	$cache = $first_byte;
 	return "fasta";
     } else {
 	return undef;
