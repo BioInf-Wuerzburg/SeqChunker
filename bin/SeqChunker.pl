@@ -151,7 +151,7 @@ sub main_loop
 	# get the filesize and open the file
 	my $filesize = (stat($act_file))[7];
 
-	if ($_debug) { printf "Filesize for file '%s' is %d bytes!\n", $act_file, $filesize; }
+	if ($_debug) { printf STDERR "Filesize for file '%s' is %d bytes!\n", $act_file, $filesize; }
 
 	open(my $fh, "<", $act_file) || die "Unable to open file '$act_file' for reading\n";
 
@@ -168,7 +168,7 @@ sub main_loop
 	# print debug information
 	if ($_debug)
 	{
-	    printf "CHUNK_SIZE=%d\nCHUNK_NUM=%d\nCHUNK_FIRST=%d\nCHUNK_LAST=%d\nCHUNK_STEP=%d\nCHUNK_STEP_NUM=%d\n", $CHUNK_SIZE, $CHUNK_NUM, $CHUNK_FIRST, $CHUNK_LAST, $CHUNK_STEP, $CHUNK_STEP_NUM;
+	    printf STDERR "ARGV=%s\nCHUNK_SIZE=%d\nCHUNK_NUM=%d\nCHUNK_FIRST=%d\nCHUNK_LAST=%d\nCHUNK_STEP=%d\nCHUNK_STEP_NUM=%d\n", join(",", @_), $CHUNK_SIZE, $CHUNK_NUM, $CHUNK_FIRST, $CHUNK_LAST, $CHUNK_STEP, $CHUNK_STEP_NUM;
 	}
 
 	# counter for the current chunk
@@ -225,7 +225,7 @@ sub test_expand_byte_suffix
 {
     foreach (qw(100 0001 15 10k 10K 10m 10M 10g 10G 5 9L4))
     {
-	print expand_byte_suffix($_), "\n";
+	print STDERR expand_byte_suffix($_), "\n";
     }
 }
 
@@ -235,11 +235,9 @@ sub test_guess_file_format
     {
 	open(my $fh, "<", $_) || die;
 	my $fileformat=guess_file_format($fh) || die "The file seems to be neigher a FASTQ nor a FASTA file\n";
-	print "$_ was detected as $fileformat\n";
+	print STDERR "$_ was detected as $fileformat\n";
 	close($fh) || die;
     }
 }
 
 __END__
-
-
