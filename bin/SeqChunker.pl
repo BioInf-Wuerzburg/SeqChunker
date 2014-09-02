@@ -127,8 +127,6 @@ sub expand_byte_suffix
     }
 }
 
-test_expand_byte_suffix();
-
 sub test_expand_byte_suffix
 {
     foreach (qw(100 0001 15 10k 10K 10m 10M 10g 10G 5 9L4))
