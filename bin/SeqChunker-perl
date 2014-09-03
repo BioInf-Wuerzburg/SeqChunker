@@ -7,25 +7,14 @@
 # Version 0.1
 
 ##----------------------------------------------------------------------------##
-## TODO
-# BUGS
-#  non known
-
-# FEATURES
-#  stdin - problem: cannot autocompute...
-#  rand - if possible with seed to allow for consistent recomputation
-
-##----------------------------------------------------------------------------##
-## CHANGELOG
-
-## 0.1
-#  First implementation to test speed of perl implementation
 
 use strict;
 use warnings;
 
 use Getopt::Long;
 use Pod::Usage;
+
+my $version = 0.20.0;
 
 # Variable defaults
 my $_debug=0;
@@ -94,8 +83,6 @@ Chunk related computations are run each input file individually.
   -d/--debug              Output more verbose messages
   -h/--help               Show this help screen
 
-=head1 DESCRIPTION
-
 =head1 EXAMPLES
 
   # output only even numbered chunks
@@ -103,6 +90,61 @@ Chunk related computations are run each input file individually.
 
   # Split file in 100 individual files of similar size
   SeqChunker --chunk-number 100 --out "my.%03d.fa" my.fa
+
+=head1 TODO
+
+=head2 BUGS
+
+=over 8
+
+=item B<Output differences to SeqChunker-dd>
+
+Currently it seems that in small chunk sizes sometimes result in
+different output compared to the old SeqChunker-dd
+
+It is still not clear was causes this behavior!
+
+=item B<Missing features>
+
+=over
+
+=item * Currently the option C<< -quiet >> is not implemented
+
+=item * The usage of the parameter C<< max_blocksize >> is not implemented
+
+=item * The parameter C<< -version >> is not implemented
+
+=item * The parameter C<< -manual >> is not mentioned in the documentation
+
+=back
+
+=back
+
+=head2 PLANNED FEATURES
+
+=over 8
+
+=item stdin
+
+problem: cannot autocompute
+
+=item rand
+
+if possible with seed to allow for consistent recomputation
+
+=back
+
+=head1 HISTORY
+
+=over 8
+
+=item version 0.20.0
+
+First implementation of a perl based SeqChunker to circumvent some
+bash/sed/math issues in the script version. Is mainly based on
+SeqChunker-dd version 0.14 and give same result for larger chunk sizes.
+
+=back
 
 =head1 AUTHOR
 
