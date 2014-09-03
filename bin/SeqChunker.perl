@@ -367,10 +367,10 @@ sub main_loop
 }
 
 GetOptions(
-    'chunk-number|n=i' => \$CHUNK_NUM,
-    'chunk-size|s=s' => \$CHUNK_SIZE,
-    'first-chunk|f=i' => \$CHUNK_FIRST,
-    'chunk-step|x=i' => \$CHUNK_STEP,
+    'chunk-number|n=i'    => \$CHUNK_NUM,
+    'chunk-size|s=s'      => \$CHUNK_SIZE,
+    'first-chunk|f=i'     => \$CHUNK_FIRST,
+    'chunk-step|x=i'      => \$CHUNK_STEP,
     'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
     'debug|d!'            => \$_debug,
     'help|?|h!'           => \$help,
