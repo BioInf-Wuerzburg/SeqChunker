@@ -370,6 +370,7 @@ GetOptions(
     'chunk-number|n=i'    => \$CHUNK_NUM,
     'chunk-size|s=s'      => \$CHUNK_SIZE,
     'first-chunk|f=i'     => \$CHUNK_FIRST,
+    'last-chunk|l=i'      => \$CHUNK_LAST,
     'chunk-step|x=i'      => \$CHUNK_STEP,
     'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
     'debug|d!'            => \$_debug,
