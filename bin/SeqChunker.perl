@@ -404,7 +404,7 @@ unless (($CHUNK_SIZE > 0 && $CHUNK_NUM == 0) || ($CHUNK_SIZE == 0 && $CHUNK_NUM 
 }
 
 ## if the user specified chunk last, this value has to be greater or equal to chunk first
-unless ($CHUNK_LAST != 0 && $CHUNK_FIRST < $CHUNK_NUM)
+if ($CHUNK_LAST != 0 && $CHUNK_FIRST < $CHUNK_NUM)
 {
     pod2usage(2);
 }
