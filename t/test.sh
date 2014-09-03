@@ -3,7 +3,7 @@
 DIR=$(dirname $0);
 cd $DIR;
 EC="$DIR/ec.fa"
-SC="$DIR/../SeqChunker"
+SC="$DIR/../bin/SeqChunker"
 TC=0;
 rm -f tmp*;
 
