@@ -385,15 +385,36 @@ pod2usage(-exitval => 0, -verbose => 2) if $man;
 ## check if still some arguments are left (should be filenames)
 if (@ARGV == 0)
 {
-    pod2usage(2);
+    pod2usage(1);
 }
 
+## Expand the chunk size if required
 $CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
 
+## if out is set we also set out_split
 if ($OUT)
 {
     $OUT_SPLIT=1;
 }
+
+## the user needs to specify chunk size or chunk num
+unless (($CHUNK_SIZE > 0 && $CHUNK_NUM == 0) || ($CHUNK_SIZE == 0 && $CHUNK_NUM > 0))
+{
+    pod2usage(2);
+}
+
+## if the user specified chunk last, this value has to be greater or equal to chunk first
+unless ($CHUNK_LAST != 0 && $CHUNK_FIRST < $CHUNK_NUM)
+{
+    pod2usage(2);
+}
+
+## if the user specified chunk step and chunk step num than this value has to be less or equal chunk_step
+unless ($CHUNK_STEP_NUM != 0 && $CHUNK_STEP != 0 && $CHUNK_STEP >= $CHUNK_STEP_NUM)
+{
+    pod2usage(2);
+}
+
 
 main_loop(@ARGV);
 
