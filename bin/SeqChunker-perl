@@ -120,6 +120,8 @@ Bug was caused by the security margin. This can be removed in future versions.
 
 =item * The parameter C<< -manual >> is not mentioned in the documentation
 
+=item * Reading from STDIN is currently not supported
+
 =back
 
 =back
