@@ -313,6 +313,19 @@ if [ ! -z "$DIFF" ]; then
 fi;
 echo "..ok"
 
+# check against the dd-based estimated checksums
+DESC="Checksum test"
+echo "Test #"$((++TC))" $DESC";
+cmd="md5sum -c MD5SUM.dd --quiet"
+echo "$cmd";
+$cmd;
+if [ $? -ne 0 ]; then
+    echo "..failed"
+    echo "Different checksums found:" 1>&2;
+    exit 1;
+fi;
+echo "..ok"
+
 rm tmp*
 
 
