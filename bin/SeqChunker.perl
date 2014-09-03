@@ -70,7 +70,7 @@ Required: Either one of the following, but not both at the same time. The unset
                           skipped ones).
   -s/--chunk-size         Size of chunks to be sampled. Supports suffixes "k,M,G".
 
-=head2 NOTE 
+=head2 NOTE
 
 Chunk sizes need to be at least twice as great as the longest record
 in the file. Otherwise results will be inconsistent.
