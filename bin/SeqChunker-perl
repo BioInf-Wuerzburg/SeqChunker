@@ -14,7 +14,7 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 
-my $version = 0.20.1;
+my $version = 0.20.2;
 
 # Variable defaults
 my $_debug=0;
@@ -39,7 +39,7 @@ my $cache = "";
 
 =head1 NAME
 
-SeqChunker.perl - split a fasta/fastq file into chunk of a specified size on the fly
+B<SeqChunker.perl I<v0.20.2>> - split a fasta/fastq file into chunk of a specified size on the fly
 
 =head1 SYNOPSIS
 
@@ -143,6 +143,11 @@ if possible with seed to allow for consistent recomputation
 =head1 HISTORY
 
 =over 8
+
+=item version 0.20.2
+
+Fixed an issue with the evaluation of the last-chunk parameter. Tests
+are now passed also with SeqChunker-perl
 
 =item version 0.20.1
 
@@ -521,7 +526,7 @@ unless (($CHUNK_SIZE > 0 && $CHUNK_NUM == 0) || ($CHUNK_SIZE == 0 && $CHUNK_NUM 
 }
 
 ## if the user specified chunk last, this value has to be greater or equal to chunk first
-if ($CHUNK_LAST != 0 && $CHUNK_FIRST < $CHUNK_NUM)
+if ($CHUNK_LAST != 0 && $CHUNK_FIRST > $CHUNK_NUM)
 {
     pod2usage(2);
 }
