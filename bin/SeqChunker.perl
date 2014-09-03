@@ -233,7 +233,7 @@ sub get_chunk
 	    my $seq = <$fh>;
 	    my $header2 = <$fh>;
 
-	    if ($header2 =~ /^+/)
+	    if ($header2 =~ /^\+/)
 	    {
 		# okay... we reached a new block
 		$buffer .= $seq.$header2;
