@@ -202,6 +202,43 @@ sub guess_file_format
 
 }
 
+sub strip_to_blockstart
+{
+    my (
+	$ref_string,
+	$fileformat
+	) = @_;
+
+    my $pattern = undef;
+
+    if ($fileformat eq "fasta")
+    {
+	$pattern = qr/^>|(?<=\n)>/;
+    } elsif ($fileformat eq "fastq")
+    {
+	$pattern = qr/^@.+\n.+\n\+|(?<=\n)@.+\n.+\n\+/;
+    } else {
+	die "Unable to handle the file format '$fileformat'\n";
+    }
+
+    if ($$ref_string =~ $pattern)
+    {
+	my $pos = $-[0];
+	my $old_block = "";
+	if ($pos > 0)
+	{
+	    $old_block = substr($$ref_string, 0, $pos, "");
+	}
+
+	# print STDERR Dumper({
+	#     pos => $pos,
+	#     old_block => $old_block,
+	#     buffer => $$ref_string,
+	# 	     }); use Data::Dumper;
+    }
+
+}
+
 sub get_chunk
 {
     my (
@@ -213,33 +250,41 @@ sub get_chunk
 
     my $starting_pos = tell($fh);
 
+    # after some discussion with Thomas we changed the estimation of
+    # the chunksize2get each chunk begins at a multiple of the chunk
+    # size and the limit is therefore the next chunk start
+    my $current_chunk = int($starting_pos/$CHUNK_SIZE);
+    my $next_chunk_pos = ($current_chunk+1)*$CHUNK_SIZE;
+
     if ($_debug)
     {
-	printf STDERR "Starting file position: current %d, but should be %d\n", $starting_pos, $starting_pos-length($cache);
+	printf STDERR "Starting file position: current %d (expected %d), next chunk starts at %d\n", $starting_pos, $current_chunk*$CHUNK_SIZE, $next_chunk_pos;
     }
 
     # we reduce the chunk size by 10 to find the right new block
     my $security_margin = 10;
+    my $buffer = "";
 
-    my $chunksize2get = $CHUNK_SIZE - $security_margin - length($cache);
-
-    my $buffer = $cache;
-    # empty cache
-    $cache = "";
-
-    # print the buffer to output_fh if skip is not set
-    if ($skip == 0 && $buffer)
-    {
-	print $output_fh $buffer;
-    }
+    my $chunksize2get = $next_chunk_pos - $starting_pos - $security_margin;
 
     # read the number of chunksize2get bytes if skip is not set
     if ($skip == 0)
     {
 	my $bytesread = read($fh, $buffer, $chunksize2get);
     } else {
-	seek($fh, $chunksize2get, 1);
+	seek($fh, $next_chunk_pos, 0);
+	$cache = "";
+	return;
     }
+
+    # if the cache is set
+    if ($cache)
+    {
+	$buffer = $cache.$buffer;
+	$cache = "";
+    }
+
+    strip_to_blockstart(\$buffer, $fileformat);
 
     # print the buffer to output_fh if skip is not set
     if ($skip == 0 && $buffer)
