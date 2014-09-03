@@ -25,10 +25,12 @@ use strict;
 use warnings;
 
 use Getopt::Long;
+use Pod::Usage;
 
 # Variable defaults
-my $_debug=1;
+my $_debug=0;
 my $help=0;
+my $man=0;
 
 my $CHUNK_NUM=0;
 
@@ -370,15 +372,19 @@ GetOptions(
     'first-chunk|f=i' => \$CHUNK_FIRST,
     'chunk-step|x=i' => \$CHUNK_STEP,
     'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
-    'debug|d' => \$_debug,
-    'help|?|h' => \$help,
-    'out|o=s' => \$OUT,
-    );
+    'debug|d!'            => \$_debug,
+    'help|?|h!'           => \$help,
+    'out|o=s'             => \$OUT,
+    'manual|m!'           => \$man
+    ) || pod2usage(2);
 
-if ($help)
+pod2usage(1) if $help;
+pod2usage(-exitval => 0, -verbose => 2) if $man;
+
+## check if still some arguments are left (should be filenames)
+if (@ARGV == 0)
 {
-    show_help();
-    exit;
+    pod2usage(2);
 }
 
 $CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
