@@ -46,18 +46,22 @@ my $MAX_BLOCK_SIZE=1000000;
 
 my $cache = "";
 
-sub show_usage
-{
-    printf "Usage: SeqChunker --chunk-number/--chunk-size INT [OPTIONS ...] FILE1 FILE2 ...";
-}
+=pod
 
-sub show_help
-{
-    show_usage();
-    print<<EOF;
+=head1 NAME
+
+SeqChunker.perl - split a fasta/fastq file into chunk of a specified size on the fly
+
+=head1 SYNOPSIS
+
+SeqChunker.perl --chunk-number|--chunk-size INT [OPTIONS...] FILE(S)";
+
+=head1 DESCRIPTION
 
 SeqChunker efficiently samples and outputs chunks from FASTA and FASTQ files,
  e.g. to serve as on-the-fly input for other tools.
+
+=head1 ARGUMENTS
 
 Required: Either one of the following, but not both at the same time. The unset
  parameter is computed respectively.
@@ -66,28 +70,33 @@ Required: Either one of the following, but not both at the same time. The unset
                           skipped ones).
   -s/--chunk-size         Size of chunks to be sampled. Supports suffixes "k,M,G".
 
-Optional:
+=head2 NOTE 
 
-  -f/--first-chunk        Skip chunks before this chunk [$CHUNK_FIRST]
-  -l/--last-chunk         Last after this chunk (including skipped ones) [$CHUNK_LAST]
-  -x/--chunk-step         Output a chunk every -x chunks [$CHUNK_STEP]
+Chunk sizes need to be at least twice as great as the longest record
+in the file. Otherwise results will be inconsistent.
+
+Chunk related computations are run each input file individually.
+
+=head1 OPTIONS
+
+  -f/--first-chunk        Skip chunks before this chunk
+  -l/--last-chunk         Last after this chunk (including skipped ones)
+  -x/--chunk-step         Output a chunk every -x chunks
   -y/--chunks-per-step    Output -y chunks every -x chunks. Cannot be greater
-                          than -x [$CHUNK_STEP_NUM]
+                          than -x
 
   -o/--out                Output filename. To split chunks into individual files
                           provide a "printf" style pattern, e.g. "chunk%02d.fa",
                           with a substitution for the chunk counter.
-  -m/--max-block-size     Maximum size of blocks in output stream [$MAX_BLOCK_SIZE]
+  -m/--max-block-size     Maximum size of blocks in output stream [default 1000000 bytes]
   -q/--quiet              Suppress non-critical messages
   -V/--version            Version of the script.
   -d/--debug              Output more verbose messages
   -h/--help               Show this help screen
 
-NOTE: Chunk sizes need to be at least twice as great as the longest record in
- the file. Otherwise results will be inconsistent.
+=head1 DESCRIPTION
 
-NOTE: Chunk related computations are run each input file individually.
-
+=head1 EXAMPLES
 
   # output only even numbered chunks
   SeqChunker --chunk-size 5M --chunk-first 2 --chunk-step 2 my.fa
@@ -95,8 +104,17 @@ NOTE: Chunk related computations are run each input file individually.
   # Split file in 100 individual files of similar size
   SeqChunker --chunk-number 100 --out "my.%03d.fa" my.fa
 
-EOF
-}
+=head1 AUTHOR
+
+Please report bugs to
+
+Frank Foerster E<lt>frank.foerster@biozentrum.uni-wuerzburg.deE<gt>
+
+Thomas Hackl E<lt>thomas.hackl@uni-wuerzburg.deE<gt>
+
+Based on code B<SeqChunker.chunk> written by Thomas Hackl
+
+=cut
 
 sub expand_byte_suffix
 {
