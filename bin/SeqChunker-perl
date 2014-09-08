@@ -495,9 +495,9 @@ GetOptions(
     'chunk-step|x=i'      => \$CHUNK_STEP,
     'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
     'debug|d!'            => \$_debug,
-    'help|?|h!'           => \$help,
+    'help|?|h'            => \$help,
     'out|o=s'             => \$OUT,
-    'manual|m!'           => \$man,
+    'manual|m'            => \$man,
     'version|V'           => \$version_requested
     ) || pod2usage(2);
 
