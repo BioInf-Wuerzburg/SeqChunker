@@ -14,7 +14,7 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 
-my $version = "0.20.2";
+my $version = "0.20.3";
 
 # Variable defaults
 my $_debug=0;
@@ -40,7 +40,7 @@ my $cache = "";
 
 =head1 NAME
 
-B<SeqChunker.perl I<v0.20.2>> - split a fasta/fastq file into chunk of a specified size on the fly
+B<SeqChunker.perl I<v0.20.3>> - split a fasta/fastq file into chunk of a specified size on the fly
 
 =head1 SYNOPSIS
 
@@ -82,7 +82,9 @@ Chunk related computations are run each input file individually.
   -q/--quiet              Suppress non-critical messages
   -V/--version            Version of the script.
   -d/--debug              Output more verbose messages
+
   -h/--help               Show this help screen
+  -m/--manual             Show the complete manual page
 
 =head1 EXAMPLES
 
@@ -117,8 +119,6 @@ Bug was caused by the security margin. This can be removed in future versions.
 
 =item * The usage of the parameter C<< max_blocksize >> is not implemented
 
-=item * The parameter C<< -manual >> is not mentioned in the documentation
-
 =item * Reading from STDIN is currently not supported
 
 =back
@@ -142,6 +142,15 @@ if possible with seed to allow for consistent recomputation
 =head1 HISTORY
 
 =over 8
+
+=item version 0.20.3
+
+Fixed another issue with the evaluation of the last-chunk
+parameter.
+
+Added output for the version parameter.
+
+Added a section for parameter manual to the documentation
 
 =item version 0.20.2
 
