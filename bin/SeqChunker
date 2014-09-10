@@ -5,11 +5,11 @@
 #   Simon Pfaff, simon.pfaff@stud-mail.uni-wuerzburg.de
 #   Thomas Hackl, thomas.hackl@uni-wuerzburg.de
 #
-# Last Modified: Frank Foerster, 2014-09-03
+# Last Modified: Thomas Hackl, 2014-09-10
 
 # Version 0.3 
-
-Bin="$(cd -- "$(dirname "$0")" && pwd)"
+# reliable detect binary folder
+Bin="$(dirname "$(readlink -f "$0")")"
 
 # check if perl exists, than use the perl version
 if [ ! -z $(which perl) ]; then
