@@ -14,7 +14,7 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 
-my $version = "0.20.3";
+my $version = "0.21.1";
 
 # Variable defaults
 my $_debug=0;
@@ -38,6 +38,7 @@ my $cache = "";
 
 my $PATTERN;
 my $interleaved;
+my $opt_filesize;
 
 =pod
 
@@ -290,6 +291,10 @@ sub get_chunk
 
     my $chunksize2get = $next_chunk_pos - $starting_pos - $security_margin;
 
+    if($chunksize2get < 0){
+        die "--chunk-number to high/--chunk-size to small for record!"
+    }
+    
     # read the number of chunksize2get bytes if skip is not set
     if ($skip == 0)
     {
@@ -424,28 +429,47 @@ sub get_chunk
 sub main_loop
 {
     my @files = @_;
-
+    @files = ('-') unless @files; # default to stdin;
+    
     foreach my $act_file (@files)
     {
-	# check if the file exists
-	unless (-e $act_file)
-	{
-	    die "The file '$act_file' does not exist!\n";
-	}
 
-	# get the filesize and open the file
-	my $filesize = (stat($act_file))[7];
+        # file or stdin
+        my $filesize;
+        if( $act_file eq '-' or -p $act_file or -t $act_file){
+            $filesize = 0;
+            die "Fixed --chunk-size required when using SeqChunker on STDIN" unless $CHUNK_SIZE;
+            print STDERR "Reading STDIN\n";
+        }else{
+            # check if the file exists
+            unless (-e $act_file){
+                die "The file '$act_file' does not exist!\n";
+            }
+            # get the filesize and open the file
+            $filesize = (stat($act_file))[7];
 
-	if ($_debug) { printf STDERR "Filesize for file '%s' is %d bytes!\n", $act_file, $filesize; }
+            if ($_debug) { printf STDERR "Filesize for file '%s' is %d bytes!\n", $act_file, $filesize; }
+            
+            unless($filesize){
+                print STDERR "Skipping empty file: $act_file\n";
+                next;
+            }
+            print STDERR "Reading $act_file\n";
+        }
 
-	open(my $fh, "<", $act_file) || die "Unable to open file '$act_file' for reading\n";
-
+        my $fh;
+        if($act_file ne '-'){
+            open($fh, "<", $act_file) || die "Unable to open file '$act_file' for reading\n";
+        }else{
+            open($fh, "<&=STDIN") || die "Unable to open file 'STDIN' for reading\n";
+        }
+        
 	my $fileformat=guess_file_format($fh) || die "The file '$act_file' seems to be neigher a FASTQ nor a FASTA file\n";
 
         # TODO: throw interleaved + fasta
 
         if($fileformat eq 'fasta' && $interleaved){
-            die "Interleaved FASTA isn't supported\n";
+            die "Interleaved FASTA isnt supported"
         }
         
         if ($fileformat eq "fasta"){
@@ -475,7 +499,7 @@ sub main_loop
 	{
 	    $CHUNK_SIZE=int($filesize/$CHUNK_NUM)+1;
 	} else {
-	    $CHUNK_NUM=int($filesize/$CHUNK_SIZE)+1;
+            $CHUNK_NUM=int($filesize/$CHUNK_SIZE)+1;
 	}
 
 	# set chunk last if not set
@@ -497,7 +521,7 @@ sub main_loop
 	my $skip = 1;
 
 	# process all chunks until LAST_CHUNK is reached
-	while ($current_chunk<=$CHUNK_LAST)
+	while (!$filesize || $current_chunk<=$CHUNK_LAST)
 	{
 	    # skipped should be true, if the number of the current_chunk < $CHUNK_FIRST
 	    if ($current_chunk < $CHUNK_FIRST)
@@ -558,6 +582,7 @@ GetOptions(
     'chunk-step|x=i'      => \$CHUNK_STEP,
     'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
     'interleaved|i!'      => \$interleaved,
+    'filesize=i'          => \$opt_filesize,
     'debug|d!'            => \$_debug,
     'help|?|h'            => \$help,
     'out|o=s'             => \$OUT,
@@ -573,12 +598,6 @@ if ($version_requested)
 
 pod2usage(1) if $help;
 pod2usage(-exitval => 0, -verbose => 2) if $man;
-
-## check if still some arguments are left (should be filenames)
-if (@ARGV == 0)
-{
-    pod2usage(1);
-}
 
 ## Expand the chunk size if required
 $CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
