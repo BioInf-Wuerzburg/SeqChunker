@@ -148,6 +148,13 @@ if possible with seed to allow for consistent recomputation
 
 =over 8
 
+=item version 0.21.1
+
+--interleaved to support for interleaved files, respecting paired read
+record boundaries.
+
+Support reading form STDIN.
+
 =item version 0.20.3
 
 Fixed another issue with the evaluation of the last-chunk
