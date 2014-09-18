@@ -37,7 +37,7 @@ my $MAX_BLOCK_SIZE=1000000;
 my $cache = "";
 
 my $PATTERN;
-
+my $interleaved;
 
 =pod
 
@@ -68,7 +68,7 @@ Required: Either one of the following, but not both at the same time. The unset
 Chunk sizes need to be at least twice as great as the longest record
 in the file. Otherwise results will be inconsistent.
 
-Chunk related computations are run each input file individually.
+Chunk related computations are run on each input file individually.
 
 =head1 OPTIONS
 
@@ -81,6 +81,7 @@ Chunk related computations are run each input file individually.
   -o/--out                Output filename. To split chunks into individual files
                           provide a "printf" style pattern, e.g. "chunk%02d.fa",
                           with a substitution for the chunk counter.
+  -i/--interleaved        Input data is interleaved FASTQ - keep pairs intact.
   -m/--max-block-size     Maximum size of blocks in output stream [default 1000000 bytes]
   -q/--quiet              Suppress non-critical messages
   -V/--version            Version of the script.
@@ -235,11 +236,17 @@ sub strip_to_blockstart
 {
     my ( $ref_string ) = @_;
 
-    print STDERR $PATTERN if $_debug;
-    
     if ($$ref_string =~ $PATTERN)
     {
-	my $pos = $-[0];
+        my $pos;
+        unless($interleaved){
+            $pos = $-[0];
+        }else{
+            $_debug && print STDERR $1 eq $2 ? "pair:  " : "split: ","$1 $2\n"; 
+            # compare ids, if identical, take both (/1,/2), otherwise take first which is /2
+            $pos = $1 eq $2 ? $-[1] : $-[2];
+        }
+        
 	my $old_block = "";
 	if ($pos > 0)
 	{
@@ -352,12 +359,11 @@ sub get_chunk
 	{
 	    # for fastq the next line have to be the sequence and the next line have to start with a plus
 	    my $seq = <$fh>;
-	    my $header2 = <$fh>;
+	    my $qhead = <$fh>;
 
-	    if ($header2 =~ /^\+/)
+	    if ($qhead =~ /^\+/)
 	    {
 		# okay... we reached a new block
-		$buffer .= $seq.$header2;
 	    } elsif ($seq =~ /^@/)
 	    {
 		# the block border was wrong and the start of a
@@ -369,10 +375,39 @@ sub get_chunk
 		{
 		    print $output_fh $buffer;
 		}
-		$buffer = $seq.$header2;
+		$buffer = "";
 	    } else {
 		die "Unable to find a new block in a fastq file\n";
 	    }
+            $buffer .= $seq.$qhead;
+
+            if($interleaved){
+                # compare ids
+                $buffer .= <$fh>; # qual to buffer
+
+                my $shead2 = <$fh>;
+
+                # handly possible eof
+                unless(defined($shead2)){
+                    if ($skip == 0 && $buffer){
+                        print $output_fh $buffer;
+                    }
+                    last;
+                }
+
+                my ($id1) = $buffer =~ /^@(\S+)(?:\/[12])/;
+                my ($id2) = $shead2 =~ /^@(\S+)(?:\/[12])/;
+
+                if($id1 ne $id2){
+                    if ($skip == 0 && $buffer){
+                        print $output_fh $buffer;
+                    }
+                    $buffer = "";
+                }
+                
+                $buffer .= $shead2;
+            }
+            
 	    $cache = $buffer;
 	    # and leave the loop
 	    last;
@@ -407,10 +442,29 @@ sub main_loop
 
 	my $fileformat=guess_file_format($fh) || die "The file '$act_file' seems to be neigher a FASTQ nor a FASTA file\n";
 
+        # TODO: throw interleaved + fasta
+
+        if($fileformat eq 'fasta' && $interleaved){
+            die "Interleaved FASTA isn't supported\n";
+        }
+        
         if ($fileformat eq "fasta"){
             $PATTERN = qr/^>|(?<=\n)>/;
         } elsif ($fileformat eq "fastq"){
-            $PATTERN = qr/^@.+\n.+\n\+|(?<=\n)@.+\n.+\n\+/;
+            if( ! $interleaved){
+                $PATTERN = qr/^@.+\n.+\n\+|(?<=\n)@.+\n.+\n\+/;
+            }else{
+                # ($id) = $self->{seq_head} =~ /^@(\S+?)(?:\/\d+)?(?:\s|$)/o; # id w/o picard
+                $PATTERN = qr/(?:^|(?<=\n))                        # start at new line
+                              (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
+                              .+\n                                 # seq
+                              \+\n                                 # qual head
+                              .+\n                                 # qual
+                              (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
+                              .+\n                                 # seq
+                              \+                                   # qual head
+                             /x;  
+            }
         } else {
             die "Unable to handle the file format '$fileformat'\n";
         }
@@ -503,6 +557,7 @@ GetOptions(
     'last-chunk|l=i'      => \$CHUNK_LAST,
     'chunk-step|x=i'      => \$CHUNK_STEP,
     'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
+    'interleaved|i!'      => \$interleaved,
     'debug|d!'            => \$_debug,
     'help|?|h'            => \$help,
     'out|o=s'             => \$OUT,
