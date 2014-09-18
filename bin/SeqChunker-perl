@@ -36,6 +36,9 @@ my $MAX_BLOCK_SIZE=1000000;
 
 my $cache = "";
 
+my $PATTERN;
+
+
 =pod
 
 =head1 NAME
@@ -183,6 +186,7 @@ Based on code B<SeqChunker.chunk> written by Thomas Hackl
 
 =cut
 
+
 sub expand_byte_suffix
 {
     my ($value) = @_;
@@ -229,24 +233,11 @@ sub guess_file_format
 
 sub strip_to_blockstart
 {
-    my (
-	$ref_string,
-	$fileformat
-	) = @_;
+    my ( $ref_string ) = @_;
 
-    my $pattern = undef;
-
-    if ($fileformat eq "fasta")
-    {
-	$pattern = qr/^>|(?<=\n)>/;
-    } elsif ($fileformat eq "fastq")
-    {
-	$pattern = qr/^@.+\n.+\n\+|(?<=\n)@.+\n.+\n\+/;
-    } else {
-	die "Unable to handle the file format '$fileformat'\n";
-    }
-
-    if ($$ref_string =~ $pattern)
+    print STDERR $PATTERN if $_debug;
+    
+    if ($$ref_string =~ $PATTERN)
     {
 	my $pos = $-[0];
 	my $old_block = "";
@@ -309,7 +300,7 @@ sub get_chunk
 	$cache = "";
     }
 
-    strip_to_blockstart(\$buffer, $fileformat);
+    strip_to_blockstart(\$buffer);
 
     # print the buffer to output_fh if skip is not set
     if ($skip == 0 && $buffer)
@@ -416,6 +407,15 @@ sub main_loop
 
 	my $fileformat=guess_file_format($fh) || die "The file '$act_file' seems to be neigher a FASTQ nor a FASTA file\n";
 
+        if ($fileformat eq "fasta"){
+            $PATTERN = qr/^>|(?<=\n)>/;
+        } elsif ($fileformat eq "fastq"){
+            $PATTERN = qr/^@.+\n.+\n\+|(?<=\n)@.+\n.+\n\+/;
+        } else {
+            die "Unable to handle the file format '$fileformat'\n";
+        }
+        
+        
 	# calculate the chunk size and the number of chunks expected
 	if ($CHUNK_SIZE == 0)
 	{
@@ -551,7 +551,6 @@ unless ($CHUNK_STEP_NUM != 0 && $CHUNK_STEP != 0 && $CHUNK_STEP >= $CHUNK_STEP_N
 {
     pod2usage(2);
 }
-
 
 main_loop(@ARGV);
 
