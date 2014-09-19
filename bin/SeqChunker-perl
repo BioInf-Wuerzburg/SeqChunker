@@ -250,7 +250,7 @@ sub strip_to_blockstart
         unless($interleaved){
             $pos = $-[0];
         }else{
-            $_debug && print STDERR $1 eq $2 ? "pair:  " : "split: ","$1 $2\n"; 
+            $_debug && print STDERR $1 eq $2 ? "$pos pair:  $1 $2\n" : "$pos split: $1 $2\n$&\n"; 
             # compare ids, if identical, take both (/1,/2), otherwise take first which is /2
             $pos = $1 eq $2 ? $-[1] : $-[2];
         }
@@ -317,10 +317,14 @@ sub get_chunk
     {
 	$buffer = $cache.$buffer;
 	$cache = "";
+    }else{
+        # this is only required after seeking, if cache exists, unless
+        # interleaved it always trims 0, which is just more work than
+        # necessary. On interleaved files it omits skip /2 records,
+        # which are than lost completely
+        strip_to_blockstart(\$buffer);
     }
-
-    strip_to_blockstart(\$buffer);
-
+    
     # print the buffer to output_fh if skip is not set
     if ($skip == 0 && $buffer)
     {
@@ -375,7 +379,41 @@ sub get_chunk
 
 	    if ($qhead =~ /^\+/)
 	    {
-		# okay... we reached a new block
+                # okay... we reached a new block
+                $buffer .= $seq.$qhead;
+                
+                if($interleaved){
+                    # compare ids
+                    $buffer .= <$fh>; # qual to buffer
+                    
+                    my $shead2 = <$fh>;
+                                        
+                    # handly possible eof
+                    unless(defined($shead2)){
+                        if ($skip == 0 && $buffer) {
+                            print $output_fh $buffer;
+                        }
+                        last;
+                    }
+
+                    my ($id1) = $buffer =~ /^@(\S+)(?:\/[12])/;
+                    my ($id2) = $shead2 =~ /^@(\S+)(?:\/[12])/;
+                    
+                    #print STDERR $shead2 unless $id2;
+                    
+                    if ($id1 ne $id2) {
+                        if ($skip == 0 && $buffer) {
+                            print $output_fh $buffer;
+                        }
+                        $buffer = "";
+                    }
+                    
+                    $buffer .= $shead2;
+                    #print STDERR "--\n",$buffer;
+                 
+                }
+
+                
 	    } elsif ($seq =~ /^@/)
 	    {
 		# the block border was wrong and the start of a
@@ -387,38 +425,13 @@ sub get_chunk
 		{
 		    print $output_fh $buffer;
 		}
-		$buffer = "";
+                $buffer = $seq.$qhead;
+                
 	    } else {
 		die "Unable to find a new block in a fastq file\n";
 	    }
-            $buffer .= $seq.$qhead;
 
-            if($interleaved){
-                # compare ids
-                $buffer .= <$fh>; # qual to buffer
-
-                my $shead2 = <$fh>;
-
-                # handly possible eof
-                unless(defined($shead2)){
-                    if ($skip == 0 && $buffer){
-                        print $output_fh $buffer;
-                    }
-                    last;
-                }
-
-                my ($id1) = $buffer =~ /^@(\S+)(?:\/[12])/;
-                my ($id2) = $shead2 =~ /^@(\S+)(?:\/[12])/;
-
-                if($id1 ne $id2){
-                    if ($skip == 0 && $buffer){
-                        print $output_fh $buffer;
-                    }
-                    $buffer = "";
-                }
-                
-                $buffer .= $shead2;
-            }
+            
             
 	    $cache = $buffer;
 	    # and leave the loop
@@ -485,7 +498,6 @@ sub main_loop
             if( ! $interleaved){
                 $PATTERN = qr/^@.+\n.+\n\+|(?<=\n)@.+\n.+\n\+/;
             }else{
-                # ($id) = $self->{seq_head} =~ /^@(\S+?)(?:\/\d+)?(?:\s|$)/o; # id w/o picard
                 $PATTERN = qr/(?:^|(?<=\n))                        # start at new line
                               (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
                               .+\n                                 # seq
