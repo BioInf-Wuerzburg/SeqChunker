@@ -228,10 +228,18 @@ pod2usage(-exitval => 0, -verbose => 2) if $man;
 ## Expand the chunk size if required
 $CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
 
-## if out is set we also set out_split
-if ($OUT)
-{
-    $OUT_SPLIT=1;
+## if out contains chunk number substitution set out_split
+if($paired){
+    unless($OUT){
+        print STDERR "--output required for --paired mode"; exit 2
+    };
+    unless($OUT =~ tr/%//){
+        print STDERR "--output requires %d pattern for 1/2 in --paired mode\n"; exit 2
+    };
+
+    $OUT_SPLIT = 1 if $OUT =~ tr/%// == 2;
+}else{
+    $OUT_SPLIT=1 if $OUT =~ tr/%//;
 }
 
 ## the user needs to specify chunk size or chunk num
@@ -279,6 +287,43 @@ main_loop(@ARGV);
 sub main_loop
 {
     my @files = @_;
+
+    # generate the filehandle for the output
+    my $output_fh = undef;
+    my $output_filename = undef;
+    my $output_filename2 = undef;
+
+    # if we are not splitting, we need a single output filehandle for
+    # everything
+    if ($OUT && ! $OUT_SPLIT) {
+        if ($paired) {
+            $output_filename = sprintf($OUT, 1);
+            $output_filename2 = sprintf($OUT, 2);
+                    
+            $_debug && printf STDERR "The next filenames for output are '%s', '%s'\n", $output_filename, $output_filename2;
+                    
+            open($output_fh, "| $RealBin/interleaved-split 1>$output_filename 2>$output_filename2")
+                || die "Unable to open files '$output_filename', '$output_filename2' for writing! $!\n";
+        } else {
+                    
+            $output_filename = $OUT;
+            $_debug && printf STDERR "The next filename for output is '%s'\n", $output_filename;
+                    
+            open($output_fh, ">", $output_filename)
+                || die "Unable to open file '$output_filename' for writing! $!\n";
+        }
+    } else {
+        if ($paired) {
+            open($output_fh, "| $RealBin/interleaved-split")
+                || die "Unable to open files '$output_filename', '$output_filename2' for writing! $!\n";
+
+        } else {
+            $output_fh = *STDOUT;
+        }
+    }
+
+
+
     for(my $i=0; $i<@files;$i++){
         my $act_file = $files[$i];
         my $fh;
@@ -426,11 +471,6 @@ sub main_loop
 		$skip = 1;
 	    }
 
-	    # generate the filehandle for the output
-	    my $output_fh = undef;
-	    my $output_filename = undef;
-	    my $output_filename2 = undef;
-
 	    if ($OUT_SPLIT && $skip == 0)
 	    {
                 if($paired){
@@ -448,14 +488,6 @@ sub main_loop
                     
                     open($output_fh, ">", $output_filename)
                         || die "Unable to open file '$output_filename' for writing! $!\n";
-                }
-	    } else {
-                if($paired){
-                    open($output_fh, "| $RealBin/interleaved-split")
-                        || die "Unable to open files '$output_filename', '$output_filename2' for writing! $!\n";
-
-                }else{
-                    $output_fh = *STDOUT;
                 }
 	    }
 
