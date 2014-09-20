@@ -508,7 +508,9 @@ sub main_loop
 	    }
 	}
 
-	close($fh) || die "Unable to close file '$act_file' after reading\n";
+        # interleave returns with exits status != 0 because its output
+        # might not be read until the end. But in this case, $! is still unset.
+	close($fh) || ($! && die "Unable to close file '$act_file' after reading\n");
     }
 }
 
