@@ -14,7 +14,7 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 
-my $version = "0.21.1";
+my $version = "0.22.1";
 
 # Variable defaults
 my $_debug=0;
@@ -124,8 +124,6 @@ Bug was caused by the security margin. This can be removed in future versions.
 
 =item * The usage of the parameter C<< max_blocksize >> is not implemented
 
-=item * Reading from STDIN is currently not supported
-
 =back
 
 =back
@@ -133,10 +131,6 @@ Bug was caused by the security margin. This can be removed in future versions.
 =head2 PLANNED FEATURES
 
 =over 8
-
-=item stdin
-
-problem: cannot autocompute
 
 =item rand
 
@@ -194,6 +188,64 @@ Thomas Hackl E<lt>thomas.hackl@uni-wuerzburg.deE<gt>
 Based on code B<SeqChunker.chunk> written by Thomas Hackl
 
 =cut
+
+
+
+GetOptions(
+    'chunk-number|n=i'    => \$CHUNK_NUM,
+    'chunk-size|s=s'      => \$CHUNK_SIZE,
+    'first-chunk|f=i'     => \$CHUNK_FIRST,
+    'last-chunk|l=i'      => \$CHUNK_LAST,
+    'chunk-step|x=i'      => \$CHUNK_STEP,
+    'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
+    'interleaved|i!'      => \$interleaved,
+    'paired|p!'           => \$paired,
+    'filesize=i'          => \$opt_filesize,
+    'debug|d!'            => \$_debug,
+    'help|?|h'            => \$help,
+    'out|o=s'             => \$OUT,
+    'manual|m'            => \$man,
+    'version|V'           => \$version_requested
+    ) || pod2usage(2);
+
+if ($version_requested)
+{
+    print "SeqChunker v",$version,"\n";
+    exit;
+}
+
+pod2usage(1) if $help;
+pod2usage(-exitval => 0, -verbose => 2) if $man;
+
+## Expand the chunk size if required
+$CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
+
+## if out is set we also set out_split
+if ($OUT)
+{
+    $OUT_SPLIT=1;
+}
+
+## the user needs to specify chunk size or chunk num
+unless (($CHUNK_SIZE > 0 && $CHUNK_NUM == 0) || ($CHUNK_SIZE == 0 && $CHUNK_NUM > 0))
+{
+    pod2usage(2);
+}
+
+## if the user specified chunk last, this value has to be greater or equal to chunk first
+if ($CHUNK_LAST != 0 && $CHUNK_FIRST > $CHUNK_LAST)
+{
+    pod2usage(2);
+}
+
+## if the user specified chunk step and chunk step num than this value has to be less or equal chunk_step
+unless ($CHUNK_STEP_NUM != 0 && $CHUNK_STEP != 0 && $CHUNK_STEP >= $CHUNK_STEP_NUM)
+{
+    pod2usage(2);
+}
+
+main_loop(@ARGV);
+
 
 
 sub expand_byte_suffix
@@ -593,59 +645,7 @@ sub main_loop
     }
 }
 
-GetOptions(
-    'chunk-number|n=i'    => \$CHUNK_NUM,
-    'chunk-size|s=s'      => \$CHUNK_SIZE,
-    'first-chunk|f=i'     => \$CHUNK_FIRST,
-    'last-chunk|l=i'      => \$CHUNK_LAST,
-    'chunk-step|x=i'      => \$CHUNK_STEP,
-    'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
-    'interleaved|i!'      => \$interleaved,
-    'filesize=i'          => \$opt_filesize,
-    'debug|d!'            => \$_debug,
-    'help|?|h'            => \$help,
-    'out|o=s'             => \$OUT,
-    'manual|m'            => \$man,
-    'version|V'           => \$version_requested
-    ) || pod2usage(2);
 
-if ($version_requested)
-{
-    print "SeqChunker v",$version,"\n";
-    exit;
-}
-
-pod2usage(1) if $help;
-pod2usage(-exitval => 0, -verbose => 2) if $man;
-
-## Expand the chunk size if required
-$CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
-
-## if out is set we also set out_split
-if ($OUT)
-{
-    $OUT_SPLIT=1;
-}
-
-## the user needs to specify chunk size or chunk num
-unless (($CHUNK_SIZE > 0 && $CHUNK_NUM == 0) || ($CHUNK_SIZE == 0 && $CHUNK_NUM > 0))
-{
-    pod2usage(2);
-}
-
-## if the user specified chunk last, this value has to be greater or equal to chunk first
-if ($CHUNK_LAST != 0 && $CHUNK_FIRST > $CHUNK_LAST)
-{
-    pod2usage(2);
-}
-
-## if the user specified chunk step and chunk step num than this value has to be less or equal chunk_step
-unless ($CHUNK_STEP_NUM != 0 && $CHUNK_STEP != 0 && $CHUNK_STEP >= $CHUNK_STEP_NUM)
-{
-    pod2usage(2);
-}
-
-main_loop(@ARGV);
 
 sub test_expand_byte_suffix
 {
