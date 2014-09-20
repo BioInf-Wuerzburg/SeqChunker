@@ -452,7 +452,7 @@ sub main_loop
                 $PATTERN = qr/(?:^|(?<=\n))                        # start at new line
                               (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
                               .+\n                                 # seq
-                              \+\n                                 # qual head
+                              \+.*\n                               # qual head
                               .+\n                                 # qual
                               (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
                               .+\n                                 # seq
@@ -684,7 +684,7 @@ sub get_chunk
     # print the buffer to output_fh if skip is not set
     if ($skip == 0 && $buffer)
     {
-	print $output_fh $buffer;
+        print $output_fh $buffer;
     }
 
     # find the next block
@@ -741,7 +741,7 @@ sub get_chunk
                 if($interleaved){
                     # compare ids
                     $buffer .= <$fh>; # qual to buffer
-                    
+
                     my $shead2 = <$fh>;
                                         
                     # handly possible eof
@@ -755,8 +755,6 @@ sub get_chunk
                     my ($id1) = $buffer =~ /^@(\S+)(?:\/[12])?/;
                     my ($id2) = $shead2 =~ /^@(\S+)(?:\/[12])?/;
                     
-                    #print STDERR $shead2 unless $id2;
-                    
                     if ($id1 ne $id2) {
                         if ($skip == 0 && $buffer) {
                             print $output_fh $buffer;
@@ -765,7 +763,7 @@ sub get_chunk
                     }
                     
                     $buffer .= $shead2;
-                    #print STDERR "--\n",$buffer;
+                    #print STDERR "--\n",$buffer,"--\n";
                  
                 }
 
@@ -779,7 +777,7 @@ sub get_chunk
 		# content
 		if ($skip == 0 && $buffer)
 		{
-		    print $output_fh $buffer;
+                    print $output_fh $buffer;
 		}
                 $buffer = $seq.$qhead;
                 
