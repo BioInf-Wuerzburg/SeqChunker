@@ -1,18 +1,12 @@
 #!/usr/bin/env perl
 
-##----------------------------------------------------------------------------##
-# Author: Frank Foerster, frank.foerster@biozentrum.uni-wuerzburg.de
-# Based on SeqChunker.chunk by Thomas Hackl, thomas.hackl@uni-wuerzburg.de
-# Last Modified: Frank Foerster, 2014-09-02
-# Version 0.1
-
-##----------------------------------------------------------------------------##
-
 use strict;
 use warnings;
 
 use Getopt::Long;
 use Pod::Usage;
+
+use FindBin qw($RealBin $Script);
 
 my $version = "0.22.1";
 
@@ -38,17 +32,18 @@ my $cache = "";
 
 my $PATTERN;
 my $interleaved;
+my $paired;
 my $opt_filesize;
 
 =pod
 
 =head1 NAME
 
-B<SeqChunker.perl I<v0.20.3>> - split a fasta/fastq file into chunk of a specified size on the fly
+SeqChunker - split a fasta/fastq file into chunk of a specified size on the fly
 
 =head1 SYNOPSIS
 
-SeqChunker.perl --chunk-number|--chunk-size INT [OPTIONS...] FILE(S)";
+  SeqChunker --chunk-number|--chunk-size INT [OPTIONS...] FILE(S)";
 
 =head1 DESCRIPTION
 
@@ -83,6 +78,7 @@ Chunk related computations are run on each input file individually.
                           provide a "printf" style pattern, e.g. "chunk%02d.fa",
                           with a substitution for the chunk counter.
   -i/--interleaved        Input data is interleaved FASTQ - keep pairs intact.
+  -p/--paired             Input files are paired-end libraries in alternating order.
   -m/--max-block-size     Maximum size of blocks in output stream [default 1000000 bytes]
   -q/--quiet              Suppress non-critical messages
   -V/--version            Version of the script.
@@ -91,7 +87,7 @@ Chunk related computations are run on each input file individually.
   -h/--help               Show this help screen
   -m/--manual             Show the complete manual page
 
-=head1 EXAMPLES
+=head2 EXAMPLES
 
   # output only even numbered chunks
   SeqChunker --chunk-size 5M --chunk-first 2 --chunk-step 2 my.fa
@@ -132,6 +128,11 @@ Bug was caused by the security margin. This can be removed in future versions.
 
 =over 8
 
+=item fraction
+
+auto-compute chunks-number/steps etc based on a more intuitive
+fraction parameter.
+
 =item rand
 
 if possible with seed to allow for consistent recomputation
@@ -141,6 +142,13 @@ if possible with seed to allow for consistent recomputation
 =head1 HISTORY
 
 =over 8
+
+
+=item version 0.22.1
+
+--paired to support sampling for paired files. Uses interleaved
+intermediate to ensure proper pair handling. This however, largely
+reduces performance compared to regular mode.
 
 =item version 0.21.1
 
@@ -253,9 +261,226 @@ unless ($CHUNK_STEP_NUM != 0 && $CHUNK_STEP != 0 && $CHUNK_STEP >= $CHUNK_STEP_N
              );
 }
 
+## if paired mode, files are read as interleaved
+$interleaved++ if $paired;
+
+##----------------------------------------------------------------------------##
+
+
 main_loop(@ARGV);
 
 
+##----------------------------------------------------------------------------##
+
+=head2 main_loop
+
+=cut
+
+sub main_loop
+{
+    my @files = @_;
+    for(my $i=0; $i<@files;$i++){
+        my $act_file = $files[$i];
+        my $fh;
+        my $filesize;
+
+        if($paired){
+            $i++;
+            my $act_file2 = $files[$i];
+
+            if ( $act_file eq '-' or -p $act_file or -t $act_file2
+                 or
+                 $act_file2 eq '-' or -p $act_file2 or -t $act_file2
+               ) {
+                die "Reading STDIN is not supported in --paired mode";
+            } else {
+                # check if the file exists
+                unless (-e $act_file){
+                    die "The file '$act_file' does not exist!\n";
+                }
+                unless (-e $act_file2){
+                    die "The file '$act_file2' does not exist!\n";
+                }
+
+                # get the filesize and open the file
+                $filesize = (stat($act_file))[7] + (stat($act_file2))[7];
+
+                if ($_debug) {
+                    printf STDERR "Filesize for files '%s' and '%s' is %d bytes!\n", $act_file, $act_file2, $filesize;
+                }
+            
+                unless($filesize){
+                    print STDERR "Skipping empty files: $act_file, $act_file2\n";
+                    next;
+                }
+                print STDERR "Reading paired files $act_file, $act_file2\n";
+            }
+
+            # create a filehandle to a intermediate interleaved pipe from the paired files
+            open($fh, "$RealBin/interleave $act_file $act_file2 |") or die "$!: $act_file, $act_file2";
+            
+        }else{
+
+            # file or stdin
+            if ( $act_file eq '-' or -p $act_file or -t $act_file) {
+                $filesize = 0;
+                die "Fixed --chunk-size required when using SeqChunker on STDIN" unless $CHUNK_SIZE;
+                print STDERR "Reading STDIN\n";
+            } else {
+                # check if the file exists
+                unless (-e $act_file){
+                    die "The file '$act_file' does not exist!\n";
+                }
+                # get the filesize and open the file
+                $filesize = (stat($act_file))[7];
+
+                if ($_debug) {
+                    printf STDERR "Filesize for file '%s' is %d bytes!\n", $act_file, $filesize;
+                }
+            
+                unless($filesize){
+                    print STDERR "Skipping empty file: $act_file\n";
+                    next;
+                }
+                print STDERR "Reading $act_file\n";
+            }
+
+            if ($act_file ne '-') {
+                open($fh, "<", $act_file) || die "Unable to open file '$act_file' for reading\n";
+            } else {
+                open($fh, "<&=STDIN") || die "Unable to open file 'STDIN' for reading\n";
+            }
+        }
+
+
+
+        my $fileformat=guess_file_format($fh) || die "The file '$act_file' seems to be neigher a FASTQ nor a FASTA file\n";
+
+        # TODO: throw interleaved + fasta
+
+        if($fileformat eq 'fasta' && $interleaved){
+            die "Interleaved FASTA isnt supported"
+        }
+        
+        if ($fileformat eq "fasta"){
+            $PATTERN = qr/^>|(?<=\n)>/;
+        } elsif ($fileformat eq "fastq"){
+            if( ! $interleaved){
+                $PATTERN = qr/^@.+\n.+\n\+|(?<=\n)@.+\n.+\n\+/;
+            }else{
+                $PATTERN = qr/(?:^|(?<=\n))                        # start at new line
+                              (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
+                              .+\n                                 # seq
+                              \+\n                                 # qual head
+                              .+\n                                 # qual
+                              (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
+                              .+\n                                 # seq
+                              \+                                   # qual head
+                             /x;  
+            }
+        } else {
+            die "Unable to handle the file format '$fileformat'\n";
+        }
+        
+        
+	# calculate the chunk size and the number of chunks expected
+	if ($CHUNK_SIZE == 0)
+	{
+	    $CHUNK_SIZE=int($filesize/$CHUNK_NUM)+1;
+	} else {
+            $CHUNK_NUM=int($filesize/$CHUNK_SIZE)+1;
+	}
+
+	# set chunk last if not set
+	if ($CHUNK_LAST == 0)
+	{
+	    $CHUNK_LAST=$CHUNK_NUM;
+	}
+
+	# print debug information
+	if ($_debug)
+	{
+	    printf STDERR "ARGV=%s\nCHUNK_SIZE=%d\nCHUNK_NUM=%d\nCHUNK_FIRST=%d\nCHUNK_LAST=%d\nCHUNK_STEP=%d\nCHUNK_STEP_NUM=%d\n", join(",", @_), $CHUNK_SIZE, $CHUNK_NUM, $CHUNK_FIRST, $CHUNK_LAST, $CHUNK_STEP, $CHUNK_STEP_NUM;
+	}
+
+	# counter for the current chunk
+	my $current_chunk=1;
+
+	# this variable determines if a block should be skipped (=1) or kept (=0)
+	my $skip = 1;
+
+	# process all chunks until LAST_CHUNK is reached
+	while (!$filesize || $current_chunk<=$CHUNK_LAST)
+	{
+	    # skipped should be true, if the number of the current_chunk < $CHUNK_FIRST
+	    if ($current_chunk < $CHUNK_FIRST)
+	    {
+		$skip = 1;
+	    }
+
+	    # moreover if not every chunk should be returned, we have to determine if this chunk should be returned or not
+	    if ((($current_chunk-$CHUNK_FIRST)%$CHUNK_STEP) < $CHUNK_STEP_NUM)
+	    {
+		$skip = 0;
+	    } else {
+		$skip = 1;
+	    }
+
+	    # generate the filehandle for the output
+	    my $output_fh = undef;
+	    my $output_filename = undef;
+	    my $output_filename2 = undef;
+
+	    if ($OUT_SPLIT && $skip == 0)
+	    {
+                if($paired){
+                    $output_filename = sprintf($OUT, $current_chunk, 1);
+                    $output_filename2 = sprintf($OUT, $current_chunk, 2);
+                    
+                    $_debug && printf STDERR "The next filenames for output are '%s', '%s'\n", $output_filename, $output_filename2;
+                    
+                    open($output_fh, "| $RealBin/interleaved-split 1>$output_filename 2>$output_filename2")
+                        || die "Unable to open files '$output_filename', '$output_filename2' for writing! $!\n";
+                }else{
+                    
+                    $output_filename = sprintf($OUT, $current_chunk);
+                    $_debug && printf STDERR "The next filename for output is '%s'\n", $output_filename;
+                    
+                    open($output_fh, ">", $output_filename)
+                        || die "Unable to open file '$output_filename' for writing! $!\n";
+                }
+	    } else {
+                if($paired){
+                    open($output_fh, "| $RealBin/interleaved-split")
+                        || die "Unable to open files '$output_filename', '$output_filename2' for writing! $!\n";
+
+                }else{
+                    $output_fh = *STDOUT;
+                }
+	    }
+
+	    get_chunk($fh, $output_fh, $fileformat, $skip);
+
+	    # close the file if a new one was created
+	    if ($OUT_SPLIT && $skip == 0)
+	    {
+		close($output_fh) || die "Unable to open file '$output_filename' after writing! $!\n";
+	    }
+
+	    $current_chunk++;
+
+	    # check if the whole file was read
+	    if (eof($fh))
+	    {
+		last;
+	    }
+	}
+
+	close($fh) || die "Unable to close file '$act_file' after reading\n";
+    }
+}
+
+##----------------------------------------------------------------------------##
 
 sub expand_byte_suffix
 {
@@ -507,152 +732,6 @@ sub get_chunk
     }
 }
 
-sub main_loop
-{
-    my @files = @_;
-    @files = ('-') unless @files; # default to stdin;
-    
-    foreach my $act_file (@files)
-    {
-
-        # file or stdin
-        my $filesize;
-        if( $act_file eq '-' or -p $act_file or -t $act_file){
-            $filesize = 0;
-            die "Fixed --chunk-size required when using SeqChunker on STDIN" unless $CHUNK_SIZE;
-            print STDERR "Reading STDIN\n";
-        }else{
-            # check if the file exists
-            unless (-e $act_file){
-                die "The file '$act_file' does not exist!\n";
-            }
-            # get the filesize and open the file
-            $filesize = (stat($act_file))[7];
-
-            if ($_debug) { printf STDERR "Filesize for file '%s' is %d bytes!\n", $act_file, $filesize; }
-            
-            unless($filesize){
-                print STDERR "Skipping empty file: $act_file\n";
-                next;
-            }
-            print STDERR "Reading $act_file\n";
-        }
-
-        my $fh;
-        if($act_file ne '-'){
-            open($fh, "<", $act_file) || die "Unable to open file '$act_file' for reading\n";
-        }else{
-            open($fh, "<&=STDIN") || die "Unable to open file 'STDIN' for reading\n";
-        }
-        
-	my $fileformat=guess_file_format($fh) || die "The file '$act_file' seems to be neigher a FASTQ nor a FASTA file\n";
-
-        # TODO: throw interleaved + fasta
-
-        if($fileformat eq 'fasta' && $interleaved){
-            die "Interleaved FASTA isnt supported"
-        }
-        
-        if ($fileformat eq "fasta"){
-            $PATTERN = qr/^>|(?<=\n)>/;
-        } elsif ($fileformat eq "fastq"){
-            if( ! $interleaved){
-                $PATTERN = qr/^@.+\n.+\n\+|(?<=\n)@.+\n.+\n\+/;
-            }else{
-                $PATTERN = qr/(?:^|(?<=\n))                        # start at new line
-                              (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
-                              .+\n                                 # seq
-                              \+\n                                 # qual head
-                              .+\n                                 # qual
-                              (@\S+?)(?:\/[12])?(?:[^\S\n].*)?\n   # seq_head: @+id + (picard) + (desc)
-                              .+\n                                 # seq
-                              \+                                   # qual head
-                             /x;  
-            }
-        } else {
-            die "Unable to handle the file format '$fileformat'\n";
-        }
-        
-        
-	# calculate the chunk size and the number of chunks expected
-	if ($CHUNK_SIZE == 0)
-	{
-	    $CHUNK_SIZE=int($filesize/$CHUNK_NUM)+1;
-	} else {
-            $CHUNK_NUM=int($filesize/$CHUNK_SIZE)+1;
-	}
-
-	# set chunk last if not set
-	if ($CHUNK_LAST == 0)
-	{
-	    $CHUNK_LAST=$CHUNK_NUM;
-	}
-
-	# print debug information
-	if ($_debug)
-	{
-	    printf STDERR "ARGV=%s\nCHUNK_SIZE=%d\nCHUNK_NUM=%d\nCHUNK_FIRST=%d\nCHUNK_LAST=%d\nCHUNK_STEP=%d\nCHUNK_STEP_NUM=%d\n", join(",", @_), $CHUNK_SIZE, $CHUNK_NUM, $CHUNK_FIRST, $CHUNK_LAST, $CHUNK_STEP, $CHUNK_STEP_NUM;
-	}
-
-	# counter for the current chunk
-	my $current_chunk=1;
-
-	# this variable determines if a block should be skipped (=1) or kept (=0)
-	my $skip = 1;
-
-	# process all chunks until LAST_CHUNK is reached
-	while (!$filesize || $current_chunk<=$CHUNK_LAST)
-	{
-	    # skipped should be true, if the number of the current_chunk < $CHUNK_FIRST
-	    if ($current_chunk < $CHUNK_FIRST)
-	    {
-		$skip = 1;
-	    }
-
-	    # moreover if not every chunk should be returned, we have to determine if this chunk should be returned or not
-	    if ((($current_chunk-$CHUNK_FIRST)%$CHUNK_STEP) < $CHUNK_STEP_NUM)
-	    {
-		$skip = 0;
-	    } else {
-		$skip = 1;
-	    }
-
-	    # generate the filehandle for the output
-	    my $output_fh = undef;
-	    my $output_filename = undef;
-
-	    if ($OUT_SPLIT && $skip == 0)
-	    {
-		$output_filename = sprintf($OUT, $current_chunk);
-		if ($_debug)
-		{
-		    printf STDERR "The next filename for output is '%s'\n", $output_filename;
-		}
-		open($output_fh, ">", $output_filename) || die "Unable to open file '$output_filename' for writing! $!\n";
-	    } else {
-		$output_fh = *STDOUT;
-	    }
-
-	    get_chunk($fh, $output_fh, $fileformat, $skip);
-
-	    # close the file if a new one was created
-	    if ($OUT_SPLIT && $skip == 0)
-	    {
-		close($output_fh) || die "Unable to open file '$output_filename' after writing! $!\n";
-	    }
-
-	    $current_chunk++;
-
-	    # check if the whole file was read
-	    if (eof($fh))
-	    {
-		last;
-	    }
-	}
-
-	close($fh) || die "Unable to close file '$act_file' after reading\n";
-    }
-}
 
 
 
