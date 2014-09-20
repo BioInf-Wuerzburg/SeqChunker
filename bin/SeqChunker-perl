@@ -8,7 +8,7 @@ use Pod::Usage;
 
 use FindBin qw($RealBin $Script);
 
-my $version = "0.22.1";
+my $version = "0.22.2";
 
 # Variable defaults
 my $_debug=0;
@@ -33,7 +33,7 @@ my $cache = "";
 my $PATTERN;
 my $interleaved;
 my $paired;
-my $opt_filesize;
+my $percentage;
 
 =pod
 
@@ -73,7 +73,8 @@ Chunk related computations are run on each input file individually.
   -x/--chunk-step         Output a chunk every -x chunks
   -y/--chunks-per-step    Output -y chunks every -x chunks. Cannot be greater
                           than -x
-
+  -p/--percentage         Output this percentage of data, is internally transformed
+                          into adequate -x/-y ratio. 0.1 % is the smallest unit.
   -o/--out                Output filename. To split chunks into individual files
                           provide a "printf" style pattern, e.g. "chunk%02d.fa",
                           with a substitution for the chunk counter.
@@ -128,11 +129,6 @@ Bug was caused by the security margin. This can be removed in future versions.
 
 =over 8
 
-=item fraction
-
-auto-compute chunks-number/steps etc based on a more intuitive
-fraction parameter.
-
 =item rand
 
 if possible with seed to allow for consistent recomputation
@@ -143,6 +139,10 @@ if possible with seed to allow for consistent recomputation
 
 =over 8
 
+=item version 0.22.2
+
+--percentage can be provided as a more intuitive sampling value. It
+will be transformed into an adequate -x/-y ratio.
 
 =item version 0.22.1
 
@@ -206,9 +206,9 @@ GetOptions(
     'last-chunk|l=i'      => \$CHUNK_LAST,
     'chunk-step|x=i'      => \$CHUNK_STEP,
     'chunks-per-step|y=i' => \$CHUNK_STEP_NUM,
+    'percentage|p=f'      => \$percentage,
     'interleaved|i!'      => \$interleaved,
-    'paired|p!'           => \$paired,
-    'filesize=i'          => \$opt_filesize,
+    'paired|2!'           => \$paired,
     'debug|d!'            => \$_debug,
     'help|?|h'            => \$help,
     'out|o=s'             => \$OUT,
@@ -231,24 +231,52 @@ $CHUNK_SIZE=expand_byte_suffix($CHUNK_SIZE);
 ## if out contains chunk number substitution set out_split
 if($paired){
     unless($OUT){
-        print STDERR "--output required for --paired mode"; exit 2
+        print STDERR "--output required for --paired mode";
+        exit 2;
     };
     unless($OUT =~ tr/%//){
-        print STDERR "--output requires %d pattern for 1/2 in --paired mode\n"; exit 2
+        print STDERR "--output requires %d pattern for 1/2 in --paired mode\n";
+        exit 2;
     };
 
-    $OUT_SPLIT = 1 if $OUT =~ tr/%// == 2;
+    if($OUT =~ tr/%// == 2){
+        if($percentage){
+            print STDERR "in --percentage mode, --output must not have %d chunk-pattern as splitting isn't supported.\n";
+            exit 2;
+        }
+        
+        $OUT_SPLIT = 1;
+    }
 }else{
-    $OUT_SPLIT=1 if $OUT =~ tr/%//;
+    if($OUT =~ tr/%//){
+        if($percentage){
+            print STDERR "--output must not have %d chunk-pattern for splitting in --percentage mode.\n  --percentage doesn't support splitting.\n";
+            exit 2;
+        }
+        
+        $OUT_SPLIT=1;
+        
+    };
 }
 
 ## the user needs to specify chunk size or chunk num
-unless (($CHUNK_SIZE > 0 && $CHUNK_NUM == 0) || ($CHUNK_SIZE == 0 && $CHUNK_NUM > 0))
+unless ($percentage || ($CHUNK_SIZE > 0 && $CHUNK_NUM == 0) || ($CHUNK_SIZE == 0 && $CHUNK_NUM > 0))
 {
     pod2usage(
               -msg => "Either --chunk-size or --chunk-num required",
               -exitval => 2
              );
+}
+
+if($percentage){
+    if($CHUNK_FIRST != 1 || $CHUNK_LAST ||  $CHUNK_STEP != 1 || $CHUNK_STEP_NUM != 1 ){
+        print STDERR "Ignoring --chunk-step/-step-num/-first/-last in --percentage mode\n";
+    }
+
+    # percentage to -x/-y ratio
+    $CHUNK_STEP = 1000;
+    $CHUNK_STEP_NUM = int(($percentage*10)+.5);
+    $CHUNK_NUM = 10000 unless $CHUNK_NUM || $CHUNK_SIZE;
 }
 
 ## if the user specified chunk last, this value has to be greater or equal to chunk first
@@ -269,6 +297,10 @@ unless ($CHUNK_STEP_NUM != 0 && $CHUNK_STEP != 0 && $CHUNK_STEP >= $CHUNK_STEP_N
              );
 }
 
+if($CHUNK_NUM && $CHUNK_STEP > $CHUNK_NUM){
+    print STDERR "--chunk-step cannot be greater than --chunk-num \n";
+    exit 2;
+}
 ## if paired mode, files are read as interleaved
 $interleaved++ if $paired;
 
@@ -369,8 +401,12 @@ sub main_loop
             # file or stdin
             if ( $act_file eq '-' or -p $act_file or -t $act_file) {
                 $filesize = 0;
-                die "Fixed --chunk-size required when using SeqChunker on STDIN" unless $CHUNK_SIZE;
                 print STDERR "Reading STDIN\n";
+                unless($CHUNK_SIZE){
+                    print STDERR "Cannot compute --chunk-size on STDIN, using 10000.\n  Decrease on small files or increase for long sequences.\n";
+                    $CHUNK_SIZE = 10000;
+                    $CHUNK_NUM = 0; # reset chunk_num, doesn't work on stdin
+                }
             } else {
                 # check if the file exists
                 unless (-e $act_file){
