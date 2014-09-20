@@ -752,8 +752,8 @@ sub get_chunk
                         last;
                     }
 
-                    my ($id1) = $buffer =~ /^@(\S+)(?:\/[12])/;
-                    my ($id2) = $shead2 =~ /^@(\S+)(?:\/[12])/;
+                    my ($id1) = $buffer =~ /^@(\S+)(?:\/[12])?/;
+                    my ($id2) = $shead2 =~ /^@(\S+)(?:\/[12])?/;
                     
                     #print STDERR $shead2 unless $id2;
                     
