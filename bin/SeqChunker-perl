@@ -527,7 +527,7 @@ sub main_loop
                 }
 	    }
 
-	    get_chunk($fh, $output_fh, $fileformat, $skip);
+	    get_chunk($fh, $current_chunk, $output_fh, $fileformat, $skip);
 
 	    # close the file if a new one was created
 	    if ($OUT_SPLIT && $skip == 0)
@@ -540,7 +540,7 @@ sub main_loop
 	    # check if the whole file was read
 	    if (eof($fh))
 	    {
-		last;
+                last;
 	    }
 	}
 
@@ -606,7 +606,7 @@ sub strip_to_blockstart
         unless($interleaved){
             $pos = $-[0];
         }else{
-            $_debug && print STDERR $1 eq $2 ? "$pos pair:  $1 $2\n" : "$pos split: $1 $2\n$&\n"; 
+            $_debug && print STDERR $1 eq $2 ? "pair:  $1 $2\n" : "split: $1 $2\n$&\n"; 
             # compare ids, if identical, take both (/1,/2), otherwise take first which is /2
             $pos = $1 eq $2 ? $-[1] : $-[2];
         }
@@ -630,6 +630,7 @@ sub get_chunk
 {
     my (
 	$fh,
+        $current_chunk,
 	$output_fh,
 	$fileformat,
 	$skip
@@ -640,8 +641,7 @@ sub get_chunk
     # after some discussion with Thomas we changed the estimation of
     # the chunksize2get each chunk begins at a multiple of the chunk
     # size and the limit is therefore the next chunk start
-    my $current_chunk = int($starting_pos/$CHUNK_SIZE);
-    my $next_chunk_pos = ($current_chunk+1)*$CHUNK_SIZE;
+    my $next_chunk_pos = $current_chunk*$CHUNK_SIZE;
 
     if ($_debug)
     {
@@ -663,7 +663,12 @@ sub get_chunk
     {
 	my $bytesread = read($fh, $buffer, $chunksize2get);
     } else {
-	seek($fh, $next_chunk_pos, 0);
+        if(-p $fh){ # cannot seek on pipe
+            my $idontcareabout;
+            read($fh, $idontcareabout, $chunksize2get);
+        }else{
+            seek($fh, $next_chunk_pos, 0);
+        }
 	$cache = "";
 	return;
     }
@@ -737,11 +742,12 @@ sub get_chunk
 	    {
                 # okay... we reached a new block
                 $buffer .= $seq.$qhead;
-                
+
                 if($interleaved){
                     # compare ids
                     $buffer .= <$fh>; # qual to buffer
 
+                    # read second record for comparison
                     my $shead2 = <$fh>;
                                         
                     # handly possible eof
@@ -752,19 +758,24 @@ sub get_chunk
                         last;
                     }
 
-                    my ($id1) = $buffer =~ /^@(\S+)(?:\/[12])?/;
-                    my ($id2) = $shead2 =~ /^@(\S+)(?:\/[12])?/;
-                    
+                    my $seq2 = <$fh>;
+                    my $qhead2 = <$fh>;
+                    my $qual2 = <$fh>;
+
+                    my ($id1) = $buffer =~ /^@(\S+?)(?:\/[12])?\s/;
+                    my ($id2) = $shead2 =~ /^@(\S+?)(?:\/[12])?\s/;
+
                     if ($id1 ne $id2) {
                         if ($skip == 0 && $buffer) {
                             print $output_fh $buffer;
                         }
+                        $buffer = $shead2.$seq2.$qhead2.$qual2;
+                    }else{
+                        if ($skip == 0 && $buffer) {
+                            print $output_fh $buffer, $shead2, $seq2, $qhead2, $qual2;
+                        }
                         $buffer = "";
                     }
-                    
-                    $buffer .= $shead2;
-                    #print STDERR "--\n",$buffer,"--\n";
-                 
                 }
 
                 
@@ -779,8 +790,44 @@ sub get_chunk
 		{
                     print $output_fh $buffer;
 		}
+
                 $buffer = $seq.$qhead;
-                
+                                
+                if($interleaved){
+                    # compare ids
+                    $buffer .= <$fh>.<$fh>; # qual to buffer
+
+                    # read second record for comparison
+                    my $shead2 = <$fh>;
+                                        
+                    # handly possible eof
+                    unless(defined($shead2)){
+                        if ($skip == 0 && $buffer) {
+                            print $output_fh $buffer;
+                        }
+                        last;
+                    }
+
+                    my $seq2 = <$fh>;
+                    my $qhead2 = <$fh>;
+                    my $qual2 = <$fh>;
+
+                    my ($id1) = $buffer =~ /^@(\S+?)(?:\/[12])?\s/;
+                    my ($id2) = $shead2 =~ /^@(\S+?)(?:\/[12])?\s/;
+
+                    if ($id1 ne $id2) {
+                        if ($skip == 0 && $buffer) {
+                            print $output_fh $buffer;
+                        }
+                        $buffer = $shead2.$seq2.$qhead2.$qual2;
+                    }else{
+                        if ($skip == 0 && $buffer) {
+                            print $output_fh $buffer, $shead2, $seq2, $qhead2, $qual2;
+                        }
+                        $buffer = "";
+                    }
+                }
+                                
 	    } else {
 		die "Unable to find a new block in a fastq file\n";
 	    }
