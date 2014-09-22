@@ -484,20 +484,29 @@ sub main_loop
 	    printf STDERR "ARGV=%s\nCHUNK_SIZE=%d\nCHUNK_NUM=%d\nCHUNK_FIRST=%d\nCHUNK_LAST=%d\nCHUNK_STEP=%d\nCHUNK_STEP_NUM=%d\n", join(",", @_), $CHUNK_SIZE, $CHUNK_NUM, $CHUNK_FIRST, $CHUNK_LAST, $CHUNK_STEP, $CHUNK_STEP_NUM;
 	}
 
+
+        # skip pre --first chunks immediately
+        if ($CHUNK_FIRST > 1){
+            my $first_skip = ($CHUNK_FIRST-1) * $CHUNK_SIZE;
+            if(-p $fh){ # cannot seek on pipe
+                my $idontcareabout;
+                read($fh, $idontcareabout, $first_skip-tell($fh)-1);
+            }else{
+                seek($fh, $first_skip, 0);
+            }
+            $cache = ""; # remove guess format stuff
+        }
+
+        
 	# counter for the current chunk
-	my $current_chunk=1;
+	my $current_chunk=$CHUNK_FIRST;
 
 	# this variable determines if a block should be skipped (=1) or kept (=0)
 	my $skip = 1;
 
-	# process all chunks until LAST_CHUNK is reached
+        # process all chunks until LAST_CHUNK is reached
 	while (!$filesize || $current_chunk<=$CHUNK_LAST)
 	{
-	    # skipped should be true, if the number of the current_chunk < $CHUNK_FIRST
-	    if ($current_chunk < $CHUNK_FIRST)
-	    {
-		$skip = 1;
-	    }
 
 	    # moreover if not every chunk should be returned, we have to determine if this chunk should be returned or not
 	    if ((($current_chunk-$CHUNK_FIRST)%$CHUNK_STEP) < $CHUNK_STEP_NUM)
