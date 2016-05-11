@@ -27,8 +27,8 @@ function test_fasta {
     DESC="$1"
     cmd="$2"
 
-    # assume flag no pipe
-    SPECIAL_FLAG="NOPIPE"
+    # assume empty special flag
+    SPECIAL_FLAG=""
 
     # assume the third parameter set special switches
     if [ $# -eq 3 ]
@@ -38,7 +38,7 @@ function test_fasta {
 
     STATUS=""
 
-    if [ "$SPECIAL_FLAG" == "PIPE" ]
+    if [[ $SPECIAL_FLAG =~ PIPE ]]
     then
 	$cmd 2>/dev/null >"$TEMPFILENAME"
     else
