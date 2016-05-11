@@ -115,24 +115,6 @@ test_SeqChunker "FASTQ: split pipe"  "$SC -n 10 $EC"                            
 ##----------------------------------------------------------------------------##
 
 # FASTQ
-EC="$DIR/ec.fq"
-DESC="split pipe"
-echo "Test #"$((++TC))" $DESC";
-TF="$DIR/tmp"
-cmd="$SC -n 10 $EC"
-echo "$cmd";
-$cmd > $TF
-
-DIFF=$(diff $EC $TF)
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-echo "..ok"
-
-
 # split in chunks
 DESC="split file"
 echo "Test #"$((++TC))" $DESC";
