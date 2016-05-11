@@ -55,11 +55,27 @@ function test_fasta {
 	fi
     fi
 
-    DIFF=$(diff "$EC" "$TEMPFILENAME")
-    if [ ! -z "$DIFF" ]; then
-	STATUS="not ok"
+    # assume a passed test
+    STATUS="ok"
+
+    # test if the special_flag contains partial
+    if [[ $SPECIAL_FLAG =~ AGAINST_LAST_RUN ]]
+    then
+	for FILENUMBER in $(find $(dirname "$TEMPFILENAME") -name $(basename "$TEMPFILENAME")".$TESTCOUNTER.*" | sed 's/^.*\([0-9]*\)$/\1/g')
+	do
+	    LAST_RUN="$TEMPFILENAME".$((TESTCOUNTER-1))."$FILENUMBER"
+	    NEW_RUN="$TEMPFILENAME"."$TESTCOUNTER"."$FILENUMBER"
+	    DIFF=$(diff "$LAST_RUN" "$NEW_RUN")
+	    if [ ! -z "$DIFF" ]; then
+		STATUS="not ok"
+	    fi
+	done
     else
-	STATUS="ok"
+	# not against last run... Just compare against input data set
+	DIFF=$(diff "$EC" "$TEMPFILENAME")
+	if [ ! -z "$DIFF" ]; then
+	    STATUS="not ok"
+	fi
     fi
 
     echo "$STATUS $TESTCOUNTER - $DESC (command was '$cmd')"
