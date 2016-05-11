@@ -120,23 +120,6 @@ test_SeqChunker "FASTQ: split first last step" "$SC -n 20 -f 19 -l 19 $EC -o $TE
 
 ##----------------------------------------------------------------------------##
 
-# FASTQ
-# split first last step
-DESC="split late first"
-echo "Test #"$((++TC))" $DESC";
-TF="$DIR/tmp"
-cmd="$SC -n 20 -f 19 -l 19 $EC -o tmp.$TC.%02d"
-echo "$cmd";
-$cmd;
-
-DIFF=$( diff tmp.$TC.19 tmp.$(($TC-3)).19 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-echo "..ok"
 
 # check against the dd-based estimated checksums
 DESC="Checksum test"
