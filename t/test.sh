@@ -136,28 +136,6 @@ if [ -e "tmp.$TC.13" ]; then
 fi;
 echo "..ok"
 
-
-
-
-#5 split in many chunks
-DESC="split file many chunks"
-echo "Test #"$((++TC))" $DESC";
-TF="$DIR/tmp"
-cmd="$SC -n 1000 $EC -o tmp.$TC.%04d"
-echo "$cmd";
-$cmd;
-cat tmp.$TC.* > $TF;
-
-DIFF=$(diff $EC $TF)
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    #echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-echo "..ok"
-
-
 #6 split late first
 DESC="split late first"
 echo "Test #"$((++TC))" $DESC";
