@@ -125,6 +125,12 @@ test_SeqChunker "FASTQ: split first last step" "$SC -n 20 -f 19 -l 19 $EC -o $TE
 ##----------------------------------------------------------------------------##
 rm tmp*
 
+##----------------------------------------------------------------------------##
+#
+# And skip md5 based tests for now
+#
+##----------------------------------------------------------------------------##
+exit
 
 # check against the dd-based estimated checksums
 DESC="Checksum test"
