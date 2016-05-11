@@ -27,17 +27,18 @@ function test_fasta {
     DESC="$1"
     cmd="$2"
 
-    PIPE_FLAG="NOPIPE"
+    # assume flag no pipe
+    SPECIAL_FLAG="NOPIPE"
 
-    # assume the third parameter set switches into pipe mode
+    # assume the third parameter set special switches
     if [ $# -eq 3 ]
     then
-	PIPE_FLAG="PIPE"
+	SPECIAL_FLAG="$3"
     fi
 
     STATUS=""
 
-    if [ "$PIPE_FLAG" == "PIPE" ]
+    if [ "$SPECIAL_FLAG" == "PIPE" ]
     then
 	$cmd 2>/dev/null >"$TEMPFILENAME"
     else
