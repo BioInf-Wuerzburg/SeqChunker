@@ -117,38 +117,6 @@ test_SeqChunker "FASTQ: split steps" "$SC -n 20 -x 5 $EC -o $TEMPFILENAME.$TESTC
 ##----------------------------------------------------------------------------##
 
 # FASTQ
-# split steps
-DESC="split steps"
-echo "Test #"$((++TC))" $DESC";
-TF="$DIR/tmp"
-cmd="$SC -n 20 -x 5 $EC -o tmp.$TC.%02d"
-echo "$cmd";
-$cmd;
-
-DIFF=$( diff tmp.$TC.01 tmp.$(($TC-1)).01 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-DIFF=$( diff tmp.$TC.06 tmp.$(($TC-1)).06 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-DIFF=$( diff tmp.$TC.16 tmp.$(($TC-1)).16 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-echo "..ok"
-
-
 # split first last step
 DESC="split first last step"
 echo "Test #"$((++TC))" $DESC";
