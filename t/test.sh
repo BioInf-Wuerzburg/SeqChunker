@@ -91,38 +91,6 @@ test_fasta "split file"  "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d"
 test_fasta "split steps" "$SC -n 20 -x 5 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN"
 
 # FASTA
-#3 split steps
-DESC="split steps"
-echo "Test #"$((++TC))" $DESC";
-TF="$DIR/tmp"
-cmd="$SC -n 20 -x 5 $EC -o tmp.$TC.%02d"
-echo "$cmd";
-$cmd;
-
-DIFF=$( diff tmp.$TC.01 tmp.$(($TC-1)).01 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-DIFF=$( diff tmp.$TC.06 tmp.$(($TC-1)).06 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-DIFF=$( diff tmp.$TC.16 tmp.$(($TC-1)).16 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-echo "..ok"
-
-
 #4 split first last step
 DESC="split first last step"
 echo "Test #"$((++TC))" $DESC";
