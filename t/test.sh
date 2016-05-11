@@ -120,51 +120,6 @@ test_SeqChunker "FASTQ: split first last step" "SC -n 20 -x 5 -y 2 -f 2 -l 12 $E
 
 # FASTQ
 # split first last step
-DESC="split first last step"
-echo "Test #"$((++TC))" $DESC";
-TF="$DIR/tmp"
-cmd="$SC -n 20 -x 5 -y 2 -f 2 -l 12 $EC -o tmp.$TC.%02d"
-echo "$cmd";
-$cmd;
-
-DIFF=$( diff tmp.$TC.02 tmp.$(($TC-2)).02 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-DIFF=$( diff tmp.$TC.03 tmp.$(($TC-2)).03)
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-DIFF=$( diff tmp.$TC.07 tmp.$(($TC-2)).07 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-DIFF=$( diff tmp.$TC.12 tmp.$(($TC-2)).12 )
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-if [ -e "tmp.$TC.13" ]; then
-    echo "..failed"
-    echo "last not respected" 1>&2;
-    # echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-echo "..ok"
-
-
-# split first last step
 DESC="split late first"
 echo "Test #"$((++TC))" $DESC";
 TF="$DIR/tmp"
