@@ -99,12 +99,10 @@ function test_SeqChunker {
 ##----------------------------------------------------------------------------##
 for SC in "$DIR"/../bin/SeqChunker "$DIR"/../bin/SeqChunker-perl "$DIR"/../bin/SeqChunker-dd "$DIR"/../bin/SeqChunker-sed
 do
-    ##----------------------------------------------------------------------------##
-    #
-    # Set TAP directive to TODO if SeqChunker-sed is called
-    #
-    ##----------------------------------------------------------------------------##
     TAP_DIRECTIVE=""
+    ##----------------------------------------------------------------------------##
+    # Set TAP directive to TODO if SeqChunker-sed is called
+    ##----------------------------------------------------------------------------##
     if [[ "$SC" =~ -sed ]]
     then
 	TAP_DIRECTIVE="# TODO SeqChunker-sed seems to be broken"
