@@ -119,6 +119,11 @@ test_SeqChunker "FASTQ: split file as preparation (same as split file test)"  "$
 test_SeqChunker "FASTQ: split first last step" "$SC -n 20 -f 19 -l 19 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN"
 
 ##----------------------------------------------------------------------------##
+#
+# Clean up
+#
+##----------------------------------------------------------------------------##
+rm tmp*
 
 
 # check against the dd-based estimated checksums
@@ -134,6 +139,5 @@ if [ $? -ne 0 ]; then
 fi;
 echo "..ok"
 
-rm tmp*
 
 
