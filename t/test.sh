@@ -108,6 +108,18 @@ do
 	TAP_DIRECTIVE="# TODO SeqChunker-sed seems to be broken"
     fi
 
+    ##----------------------------------------------------------------------------##
+    # Set TAP directive to TODO if SeqChunker-dd is called and bash version <4
+    ##----------------------------------------------------------------------------##
+    if [[ "$SC" =~ -dd ]]
+    then
+	BASH_MAJOR_VER=$(bash --version | grep -Eo [0-9][.][0-9] | cut -d. -f1)
+	if [ $BASH_MAJOR_VER -lt 4 ]
+	then
+	    TAP_DIRECTIVE="# TODO SeqChunker-dd requires bash version >= 4"
+	fi
+    fi
+
 
     ##----------------------------------------------------------------------------##
     #
