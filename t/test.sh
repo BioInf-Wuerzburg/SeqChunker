@@ -8,6 +8,8 @@ TC=0;
 rm -f tmp*;
 
 TEMPFILENAME="$DIR/tmp"
+# delete all existing tmp files
+rm -f "$TEMPFILENAME"*;
 
 TESTCOUNTER=1;
 
@@ -34,9 +36,6 @@ function test_fasta {
     fi
 
     STATUS=""
-
-    # delete all existing tmp files
-    rm -f "$TEMPFILENAME"*;
 
     if [ "$PIPE_FLAG" == "PIPE" ]
     then
