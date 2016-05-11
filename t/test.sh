@@ -13,7 +13,7 @@ rm -f "$TEMPFILENAME"*;
 
 TESTCOUNTER=1;
 
-TOTAL_NUMBER_OF_TESTS=3
+TOTAL_NUMBER_OF_TESTS=4
 
 echo "$TESTCOUNTER..$TOTAL_NUMBER_OF_TESTS"
 
@@ -89,6 +89,7 @@ function test_fasta {
 test_fasta "split pipe"  "$SC -n 10 $EC"                                    "PIPE"
 test_fasta "split file"  "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d"
 test_fasta "split steps" "$SC -n 20 -x 5 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN"
+test_fasta "split file many chunks" "$SC -n 1000 $EC -o $TEMPFILENAME.$TESTCOUNTER.%04d"
 
 # FASTA
 #4 split first last step
