@@ -7,7 +7,62 @@ SC="$DIR/../bin/SeqChunker"
 TC=0;
 rm -f tmp*;
 
+TEMPFILENAME="$DIR/tmp"
+
+TESTCOUNTER=1;
+
+TOTAL_NUMBER_OF_TESTS=2
+
+echo "$TESTCOUNTER..$TOTAL_NUMBER_OF_TESTS"
+
 ##----------------------------------------------------------------------------##
+#
+# Define a FASTA test script
+#
+##----------------------------------------------------------------------------##
+
+function test_fasta {
+    DESC="$1"
+    cmd="$2"
+
+    PIPE_FLAG="NOPIPE"
+
+    # assume the third parameter set switches into pipe mode
+    if [ $# -eq 3 ]
+    then
+	PIPE_FLAG="PIPE"
+    fi
+
+    STATUS=""
+
+    # delete all existing tmp files
+    rm -f "$TEMPFILENAME"*;
+
+    if [ "$PIPE_FLAG" == "PIPE" ]
+    then
+	$cmd 2>/dev/null >"$TEMPFILENAME"
+    else
+	$cmd 2>/dev/null
+
+	# combine all output to a single file
+	cat "$TEMPFILENAME".* >"$TEMPFILENAME"
+    fi
+
+    DIFF=$(diff "$EC" "$TEMPFILENAME")
+    if [ ! -z "$DIFF" ]; then
+	STATUS="not ok"
+    else
+	STATUS="ok"
+    fi
+
+    echo "$STATUS $TESTCOUNTER - $DESC (command was '$cmd')"
+
+    # finally increment the test counter
+    TESTCOUNTER=$((TESTCOUNTER+1))
+}
+
+test_fasta "split pipe" "$SC -n 10 $EC"                                    "PIPE"
+test_fasta "split file" "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d"
 
 # FASTA
 #1
