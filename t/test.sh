@@ -65,41 +65,6 @@ test_fasta "split pipe" "$SC -n 10 $EC"                                    "PIPE
 test_fasta "split file" "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d"
 
 # FASTA
-#1
-DESC="split pipe"
-echo "Test #"$((++TC))" $DESC";
-TF="$DIR/tmp"
-cmd="$SC -n 10 $EC"
-echo "$cmd";
-$cmd > $TF
-
-DIFF=$(diff $EC $TF)
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-echo "..ok"
-
-
-#2 split in chunks
-DESC="split file"
-echo "Test #"$((++TC))" $DESC";
-TF="$DIR/tmp"
-cmd="$SC  -n 20 $EC -o tmp.$TC.%02d"
-echo "$cmd";
-$cmd;
-cat tmp.$TC.* > $TF;
-
-DIFF=$(diff $EC $TF)
-if [ ! -z "$DIFF" ]; then
-    echo "..failed"
-    echo "unexpected difference found:" 1>&2;
-    #echo "$DIFF" 1>&2;
-    exit 1;
-fi;
-echo "..ok"
 
 
 #3 split steps
