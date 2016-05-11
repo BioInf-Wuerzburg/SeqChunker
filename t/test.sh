@@ -12,7 +12,7 @@ rm -f "$TEMPFILENAME"*;
 
 TESTCOUNTER=1;
 
-TOTAL_NUMBER_OF_TESTS=9
+TOTAL_NUMBER_OF_TESTS=10
 
 echo "$TESTCOUNTER..$TOTAL_NUMBER_OF_TESTS"
 
@@ -112,6 +112,7 @@ EC="$DIR/ec.fq"
 
 test_SeqChunker "FASTQ: split pipe"  "$SC -n 10 $EC"                                    "PIPE"
 test_SeqChunker "FASTQ: split file"  "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d"
+test_SeqChunker "FASTQ: split steps" "$SC -n 20 -x 5 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN"
 
 ##----------------------------------------------------------------------------##
 
