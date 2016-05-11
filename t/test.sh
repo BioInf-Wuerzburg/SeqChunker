@@ -44,7 +44,14 @@ function test_fasta {
 	$cmd 2>/dev/null
 
 	# combine all output to a single file
-	cat "$TEMPFILENAME".* >"$TEMPFILENAME"
+	# check if the output files are existing
+	FILELIST=$(find $(dirname "$TEMPFILENAME") -name $(basename "$TEMPFILENAME")".$TESTCOUNTER.*")
+	if [ "$FILELIST" == "" ]
+	then
+	    echo "" >"$TEMPFILENAME"
+	else
+	    cat "$TEMPFILENAME"."$TESTCOUNTER".* >"$TEMPFILENAME"
+	fi
     fi
 
     DIFF=$(diff "$EC" "$TEMPFILENAME")
