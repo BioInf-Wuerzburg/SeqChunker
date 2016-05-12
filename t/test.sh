@@ -136,7 +136,7 @@ do
     test_SeqChunker "FASTA: split file many chunks" "$SC -n 1000 $EC -o $TEMPFILENAME.$TESTCOUNTER.%04d" "" "$TAP_DIRECTIVE"
     test_SeqChunker "FASTA: split last first" "$SC -n 1000 -f 1000 -l 1000 $EC -o $TEMPFILENAME.$TESTCOUNTER.%04d" "AGAINST_LAST_RUN" "$TAP_DIRECTIVE"
     test_SeqChunker "FASTA: split file as preparation (same as split file test)"  "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "" "$TAP_DIRECTIVE"
-    test_SeqChunker "FASTA: split first last step" "$SC  -n 20 -x 5 -y 2 -f 2 -l 12 $EC -o tmp.$TC.%02d" "AGAINST_LAST_RUN" "$TAP_DIRECTIVE"
+    test_SeqChunker "FASTA: split first last step" "$SC  -n 20 -x 5 -y 2 -f 2 -l 12 $EC -o tmp.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN" "$TAP_DIRECTIVE"
 
     ##----------------------------------------------------------------------------##
     #
@@ -151,7 +151,7 @@ do
     test_SeqChunker "FASTQ: split file"  "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "" "$TAP_DIRECTIVE"
     test_SeqChunker "FASTQ: split steps" "$SC -n 20 -x 5 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN" "$TAP_DIRECTIVE"
     test_SeqChunker "FASTQ: split file as preparation (same as split file test)"  "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "" "$TAP_DIRECTIVE"
-    test_SeqChunker "FASTQ: split first last step" "SC -n 20 -x 5 -y 2 -f 2 -l 12 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN" "$TAP_DIRECTIVE"
+    test_SeqChunker "FASTQ: split first last step" "$SC -n 20 -x 5 -y 2 -f 2 -l 12 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN" "$TAP_DIRECTIVE"
     test_SeqChunker "FASTQ: split file as preparation (same as split file test)"  "$SC -n 20 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "" "$TAP_DIRECTIVE"
     test_SeqChunker "FASTQ: split first last step" "$SC -n 20 -f 19 -l 19 $EC -o $TEMPFILENAME.$TESTCOUNTER.%02d" "AGAINST_LAST_RUN" "$TAP_DIRECTIVE"
 
