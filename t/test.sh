@@ -47,19 +47,19 @@ function test_SeqChunker {
 
     if [[ $SPECIAL_FLAG =~ PIPE ]]
     then
-	$cmd 2>/dev/null >"$TEMPFILENAME"
+	$cmd 2>/dev/null >"$TEMPFILENAME"."$TESTCOUNTER".01
     else
 	$cmd 2>/dev/null >/dev/null
+    fi
 
-	# combine all output to a single file
-	# check if the output files are existing
-	FILELIST=$(find $(dirname "$TEMPFILENAME") -name $(basename "$TEMPFILENAME")".$TESTCOUNTER.*")
-	if [ "$FILELIST" == "" ]
-	then
-	    echo "" >"$TEMPFILENAME"
-	else
-	    cat "$TEMPFILENAME"."$TESTCOUNTER".* >"$TEMPFILENAME"
-	fi
+    # combine all output to a single file
+    # check if the output files are existing
+    FILELIST=$(find $(dirname "$TEMPFILENAME") -name $(basename "$TEMPFILENAME")".$TESTCOUNTER.*")
+    if [ "$FILELIST" == "" ]
+    then
+	echo "" >"$TEMPFILENAME"
+    else
+	cat "$TEMPFILENAME"."$TESTCOUNTER".* >"$TEMPFILENAME"
     fi
 
     # assume a passed test
