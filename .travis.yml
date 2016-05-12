@@ -2,6 +2,11 @@ os:
   - linux
   - osx
   
+# due to we are sure about the MacOSX version, I tollerate build failures under osx
+matrix:
+  allow_failures:
+    - os: osx
+  
 sudo: false
 
 language: perl
