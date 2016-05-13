@@ -53,37 +53,15 @@ function test_SeqChunker {
 	$cmd 2>/dev/null >/dev/null
     fi
 
-    # combine all output to a single file
-    # check if the output files are existing
-    FILELIST=$(find $(dirname "$TEMPFILENAME") -name $(basename "$TEMPFILENAME")".$TESTCOUNTER.*")
-    if [ "$FILELIST" == "" ]
-    then
-	echo "" >"$TEMPFILENAME"
-    else
-	cat "$TEMPFILENAME"."$TESTCOUNTER".* >"$TEMPFILENAME"
-    fi
+    # perform test of required output files based on md5 checksums
+    test_for_expected_md5_sums "$TEMPFILENAME"'\.'"$TESTCOUNTER"'\.' reference.md5
+    RESULT=$?
 
-    # assume a passed test
-    STATUS="ok"
-
-    # test if the special_flag contains partial
-    if [[ $SPECIAL_FLAG =~ AGAINST_LAST_RUN ]]
+    if [ $RESULT -eq 0 ]
     then
-	for FILENUMBER in $(find $(dirname "$TEMPFILENAME") -name $(basename "$TEMPFILENAME")".$TESTCOUNTER.*" | sed 's/^.*\([0-9]*\)$/\1/g')
-	do
-	    LAST_RUN="$TEMPFILENAME".$((TESTCOUNTER-1))."$FILENUMBER"
-	    NEW_RUN="$TEMPFILENAME"."$TESTCOUNTER"."$FILENUMBER"
-	    DIFF=$(diff "$LAST_RUN" "$NEW_RUN")
-	    if [ ! -z "$DIFF" ]; then
-		STATUS="not ok"
-	    fi
-	done
+	STATUS="ok"
     else
-	# not against last run... Just compare against input data set
-	DIFF=$(diff "$EC" "$TEMPFILENAME")
-	if [ ! -z "$DIFF" ]; then
-	    STATUS="not ok"
-	fi
+	STATUS="not ok"
     fi
 
     echo "$STATUS $TESTCOUNTER - $DESC (command was '$cmd') $TAP_DIRECTIVE"
