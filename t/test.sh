@@ -23,11 +23,16 @@ echo "$TESTCOUNTER..$TOTAL_NUMBER_OF_TESTS"
 ##----------------------------------------------------------------------------##
 
 function test_SeqChunker {
-    DESC="$1"
-    cmd="$2"
+    local DESC="$1"
+    local cmd="$2"
 
     # assume empty special flag
-    SPECIAL_FLAG=""
+    local SPECIAL_FLAG=""
+
+    local TAP_DIRECTIVE=""
+
+
+    local STATUS="ok"
 
     # assume the third parameter set special switches
     if [ $# -ge 3 ]
@@ -35,15 +40,11 @@ function test_SeqChunker {
 	SPECIAL_FLAG="$3"
     fi
 
-    TAP_DIRECTIVE=""
     # assume the fourth parameter set TODO/SKIP
     if [ $# -ge 4 ]
     then
 	TAP_DIRECTIVE="$4"
     fi
-
-
-    STATUS=""
 
     if [[ $SPECIAL_FLAG =~ PIPE ]]
     then
