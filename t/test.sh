@@ -92,6 +92,100 @@ function test_SeqChunker {
     TESTCOUNTER=$((TESTCOUNTER+1))
 }
 
+##----------------------------------------------------------------------------##
+#
+# Define a md5 sum compare script to assess the correct splitting
+#
+##----------------------------------------------------------------------------##
+
+function test_for_expected_md5_sums {
+
+    local FILEPATTERN=$1
+    local REFERENCE_FILE=$2
+
+    local md5_temp_file="tmp.md5"
+
+    local output=0                      # assuming no error
+
+    # extract the reference md5 sums
+    grep "$FILEPATTERN" "$REFERENCE_FILE" >"$md5_temp_file"
+
+    # test if tmp.md5 has a length of more than 0
+    if [ ! -s "$md5_temp_file" ]
+    then
+	echo "No expected MD5 sums for the given pattern '$FILEPATTERN' defined" >&2
+	return 10
+    fi
+
+    # under MacOSX we need to use another approach than on Linux,
+    # therefore we need to decide which OS is running:
+    local MD5=""
+    case "$OSTYPE" in
+	darwin*)
+	    MD5="md5 -r"
+	    ;;
+	linux-gnu)
+	    MD5="md5sum"
+	    ;;
+    esac
+
+    # test if all expected files are correct
+    while read -r line || [[ -n "$line" ]]
+    do
+	local exp_checksum=${line% *}; file=${line#* };
+	local cmd="$MD5 $file | awk '{print \$1}'";
+
+	local got_checksum=""
+
+	if [ -e "$file" ]
+	then
+	    got_checksum=$(bash -c "$cmd");
+	else
+	    got_checksum="-1"
+	    echo "Missing file '$file' for MD5 comparison" >&2
+	fi
+
+	if [[ $exp_checksum != $got_checksum ]]
+	then
+	    output=1              # indicating an error
+	    echo "MD5 mismatch for '$file' expected MD5: exp:$exp_checksum but found $got_checksum" >&2
+	fi
+
+    done <"$md5_temp_file"
+
+    # test if no other files were created, so each file following the
+    # pattern need to be represented in the expected file
+    for got_file in $(find . | grep "$FILEPATTERN")
+    do
+	# check if the file exists
+	if [ ! -e "$got_file" ]
+	then
+	    output=1              # indicating an error
+	    echo "File '$got_file' does not exist" >&2
+	fi
+
+	local cmd="$MD5 $got_file | awk '{print \$1}'";
+
+	local got_checksum=""
+
+	got_checksum=$(bash -c "$cmd");
+
+	# build a grep expression
+	local need_to_be_defined='^'"$got_checksum"'[[:space:]]*.*'"$got_file"'$'
+
+	# test via grep if that line exists
+	grep "$need_to_be_defined" "$md5_temp_file" 2>/dev/null >/dev/null
+
+	if [ $? -ne 0 ]
+	then
+	    output=1              # indicating an error
+	    echo "MD5 entry not found via grep pattern '$need_to_be_defined' for file '$got_file'" >&2
+	fi
+    done
+
+    return "$output"
+}
+
 
 ##----------------------------------------------------------------------------##
 #
