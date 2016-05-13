@@ -16,4 +16,4 @@ install: true
 
 script:
   - cd t
-  - ./test.sh
+  - prove ./test.sh
