@@ -1,0 +1,14 @@
+os:
+  - linux
+  - osx
+  
+sudo: false
+
+language: perl
+
+# normally cpanm is called for perl, but we do not need it so skip the installation of dependencies
+install: true
+
+script:
+  - cd t
+  - prove ./test.sh
