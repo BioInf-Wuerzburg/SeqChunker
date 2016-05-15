@@ -61,7 +61,7 @@ EOF
 }
 
 # Execute getopt
-ARGS=`getopt --name "SeqChunker.sed-only" \
+ARGS=`getopt --name "SeqChunker-sed" \
     --options "n:s:e:k:c:r:x:y:f:l:b:m:o:qdh" \
     --longoptions "chunk-number:,chunk-size:,chunk-end:,chunk-count:,chunk-skip:,chunk-ratio:,chunk-step:,chunks-per-step:,first-chunk:,last-chunk:,byte-skip:,out:,quiet,debug,help" \
     -- "$@"`
@@ -258,9 +258,18 @@ fi;
 for FILE in $@; do
 
     ##determine format (FASTA/FASTQ)
-    IS_FASTQ=$(head -c 1 "$FILE" | sed 's/[^>@]/\!/;s/>/0/;s/@/1/;s/\n//');    
-    if [ "$IS_FASTQ" = "!" ]; then
-        echo "FILE neither FASTA nor FASTQ" 1>&2 
+    IS_FASTQ=$(sed -n '
+1{
+s/^[^>@].*/!/
+t finished
+s/^>.*/0/
+t finished
+s/^@.*/1/
+:finished
+p;q
+}' "$FILE");
+    if [[ $IS_FASTQ == !* ]]; then
+        echo "FILE neither FASTA nor FASTQ" 1>&2
         exit 1
     fi;
 done;
